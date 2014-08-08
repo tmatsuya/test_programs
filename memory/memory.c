@@ -98,24 +98,32 @@ int main(int argc, char *argv[])
 		c = wgetch(win);
 		switch (c) {
 			case KEY_UP:
+			case 'k':
+			case 'K':
 				if (y > 0) {
 					n = 0;
 					--y;
 				}
 				break;
 			case KEY_DOWN:
+			case 'j':
+			case 'J':
 				if (y < LINES-6) {
 					n = 0;
 					++y;
 				}
 				break;
 			case KEY_LEFT:
+			case 'h':
+			case 'H':
 				if (x > 0) {
 					n = 0;
 					--x;
 				}
 				break;
 			case KEY_RIGHT:
+			case 'l':
+			case 'L':
 				if (x < 15) {
 					n = 0;
 					++x;
