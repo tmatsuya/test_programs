@@ -55,7 +55,7 @@
 //struct list_head ptype_all __read_mostly;
 //struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head *ptypeall   = 0LL;
-struct list_head **ptypebase = 0LL;
+struct list_head *ptypebase[16];
 int (*backup_func)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 
 static char *interface = IF_NAME;
@@ -149,7 +149,9 @@ int get_table_entry(void)
 	int pos, size, i;
 	char buf[128], *ptr;
 
-	ptypeall = ptypebase = 0LL;
+	ptypeall = 0LL;
+	for (i=0;i<16;++i)
+		ptypebase[i] = 0LL;
 
 	fp = file_open("/proc/kallsyms", O_RDONLY, 0);
 	if (fp) {
@@ -158,17 +160,21 @@ int get_table_entry(void)
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
 			ptr = strnstr(buf, "ptype_all", sizeof(buf));
-			if (ptr)
+			if (ptr && !ptypeall)
 				sscanf(ptr-19, "%llx", &ptypeall);
 			ptr = strnstr(buf, "ptype_base", sizeof(buf));
-			if (ptr)
-				sscanf(ptr-19, "%llx", &ptypebase);
+			if (ptr && !ptypebase[0]) {
+				sscanf(ptr-19, "%llx", &ptypebase[0]);
+				for (i=1;i<16;++i)
+					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
+			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (ptypeall != 0LL && ptypebase != 0LL)
+			if (ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
-		printk("ptype_all=%p, ptype_base=%p\n", ptypeall, ptypebase);
-
+		printk("ptype_all=%p\n", ptypeall);
+		for (i=0; i<16; ++i)
+			printk("ptype_base[%d]=%p\n", i, ptypebase[i]);
 
 		file_close(fp);
 		return 0;
