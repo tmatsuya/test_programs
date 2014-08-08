@@ -226,7 +226,11 @@ int genpipe_ipv6rcv(struct sk_buff *skb, struct net_device *dev, struct packet_t
 
 int genpipe_nop(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
 {
-	return 0;
+//	printk("genpipe_nop dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
+//	if (dev != genpipe_pack.dev)
+//		return nop(skb, dev, pt, dev2);
+//	else
+		return 0;
 }
 
 int genpipe_pack_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
@@ -524,9 +528,6 @@ static int __init genpipe_init(void)
 	init_waitqueue_head( &read_q );
 	init_waitqueue_head( &write_q );
 
-	genpipe_pack.dev = device;
-	dev_add_pack(&genpipe_pack);
-
 //macchan
 	printk("*device=%p\n", device);
 	printk("*genpipe_arprcv=%p\n", genpipe_arprcv);
@@ -535,28 +536,28 @@ static int __init genpipe_init(void)
 
 	// macchan
 	rcu_read_lock();
-for (i=0;i<16;++i) {
-	printk("*ptype_base[%x]*\n", i);
-	list_for_each_entry_rcu(ptype, ptypebase[i], list) {
-		if (ptype->func == arprcv)
-			ptype->func = genpipe_arprcv;
-		else if (ptype->func == iprcv)
-			ptype->func = genpipe_iprcv;
-		else if (ptype->func == ipv6rcv)
-			ptype->func = genpipe_ipv6rcv;
-		printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
+	for (i=0;i<16;++i) {
+		printk("*ptype_base[%x]*\n", i);
+		list_for_each_entry_rcu(ptype, ptypebase[i], list) {
+			if (ptype->func == arprcv)
+				ptype->func = genpipe_arprcv;
+			else if (ptype->func == iprcv)
+				ptype->func = genpipe_iprcv;
+			else if (ptype->func == ipv6rcv)
+				ptype->func = genpipe_ipv6rcv;
+			printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
+		}
 	}
-}
 	printk("*ptype*\n");
 	list_for_each_entry_rcu(ptype, ptypeall, list) {
-//		if (ptype->dev == device) {
-//			backup_func = ptype->func;
-//			ptype->func = genpipe_arprcv;
-//		}
+		backup_func = ptype->func;
+		ptype->func = genpipe_nop;
 		printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
 	}
 	rcu_read_unlock();
 
+	genpipe_pack.dev = device;
+	dev_add_pack(&genpipe_pack);
 
 	rx_count = 0;
 
@@ -586,21 +587,21 @@ static void __exit genpipe_cleanup(void)
 
 //macchan
 	rcu_read_lock();
-for (i=0;i<16;++i) {
-	list_for_each_entry_rcu(ptype, ptypebase[i], list) {
-		if (ptype->func == genpipe_arprcv)
-			ptype->func = arprcv;
-		else if (ptype->func == genpipe_iprcv)
-			ptype->func = iprcv;
-		else if (ptype->func == genpipe_ipv6rcv)
-			ptype->func = ipv6rcv;
-	}
+	for (i=0;i<16;++i) {
+		list_for_each_entry_rcu(ptype, ptypebase[i], list) {
+			if (ptype->func == genpipe_arprcv)
+				ptype->func = arprcv;
+			else if (ptype->func == genpipe_iprcv)
+				ptype->func = iprcv;
+			else if (ptype->func == genpipe_ipv6rcv)
+				ptype->func = ipv6rcv;
+		}
 	}
 	rcu_read_unlock();
 	rcu_read_lock();
 	list_for_each_entry_rcu(ptype, ptypeall, list) {
-//		if (ptype->func == genpipe_arprcv);
-//			ptype->func = backup_func; 
+		if (ptype->func == genpipe_nop);
+			ptype->func = backup_func; 
 	}
 	rcu_read_unlock();
 
