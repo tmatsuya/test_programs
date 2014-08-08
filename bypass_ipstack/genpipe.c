@@ -543,12 +543,21 @@ error:
 
 static void __exit genpipe_cleanup(void)
 {
+	int i;
+	struct packet_type *ptype = NULL;
 	misc_deregister(&genpipe_dev);
 
 	dev_remove_pack(&genpipe_pack);
 
 //macchan
-	struct packet_type *ptype = NULL;
+	rcu_read_lock();
+for (i=0;i<16;++i) {
+	list_for_each_entry_rcu(ptype, ptypebase[i], list) {
+		if (ptype->func == genpipe_hook);
+			ptype->func = backup_func; 
+	}
+	}
+	rcu_read_unlock();
 	rcu_read_lock();
 	list_for_each_entry_rcu(ptype, ptypeall, list) {
 		if (ptype->func == genpipe_hook);
