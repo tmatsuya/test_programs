@@ -56,6 +56,9 @@
 //struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head *ptypeall   = 0LL;
 struct list_head *ptypebase[16];
+int (*arprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
+int (*iprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
+int (*ipv6rcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*backup_func)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 
 static char *interface = IF_NAME;
@@ -149,7 +152,7 @@ int get_table_entry(void)
 	int pos, size, i;
 	char buf[128], *ptr;
 
-	ptypeall = 0LL;
+	arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
 	for (i=0;i<16;++i)
 		ptypebase[i] = 0LL;
 
@@ -159,19 +162,31 @@ int get_table_entry(void)
 		pos=0;
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
-			ptr = strnstr(buf, "ptype_all", sizeof(buf));
+			ptr = strnstr(buf, " arp_rcv\n", sizeof(buf));
+			if (ptr && !arprcv)
+				sscanf(ptr-19, "%llx", &arprcv);
+			ptr = strnstr(buf, " ip_rcv\n", sizeof(buf));
+			if (ptr && !iprcv)
+				sscanf(ptr-19, "%llx", &iprcv);
+			ptr = strnstr(buf, " ipv6_rcv\n", sizeof(buf));
+			if (ptr && !ipv6rcv)
+				sscanf(ptr-19, "%llx", &ipv6rcv);
+			ptr = strnstr(buf, " ptype_all\n", sizeof(buf));
 			if (ptr && !ptypeall)
 				sscanf(ptr-19, "%llx", &ptypeall);
-			ptr = strnstr(buf, "ptype_base", sizeof(buf));
+			ptr = strnstr(buf, " ptype_base\n", sizeof(buf));
 			if (ptr && !ptypebase[0]) {
 				sscanf(ptr-19, "%llx", &ptypebase[0]);
 				for (i=1;i<16;++i)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (ptypeall != 0LL && ptypebase[0] != 0LL)
+			if (arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
+		printk("arprcv=%p\n", arprcv);
+		printk("iprcv=%p\n", iprcv);
+		printk("ipv6rcv=%p\n", ipv6rcv);
 		printk("ptype_all=%p\n", ptypeall);
 		for (i=0; i<16; ++i)
 			printk("ptype_base[%d]=%p\n", i, ptypebase[i]);
@@ -182,11 +197,29 @@ int get_table_entry(void)
 	return -1;	
 }
 
-int genpipe_hook(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
+int genpipe_arprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
 {
-//	printk("genpipe_hook dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
+//	printk("genpipe_arprcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
 	if (dev != genpipe_pack.dev)
-		return backup_func(skb, dev, pt, dev2);
+		return arprcv(skb, dev, pt, dev2);
+	else
+		return 0;
+}
+
+int genpipe_iprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
+{
+//	printk("genpipe_iprcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
+	if (dev != genpipe_pack.dev)
+		return iprcv(skb, dev, pt, dev2);
+	else
+		return 0;
+}
+
+int genpipe_ipv6rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
+{
+//	printk("genpipe_ipv6rcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
+	if (dev != genpipe_pack.dev)
+		return ipv6rcv(skb, dev, pt, dev2);
 	else
 		return 0;
 }
@@ -496,7 +529,7 @@ static int __init genpipe_init(void)
 
 //macchan
 	printk("*device=%p\n", device);
-	printk("*genpipe_hook=%p\n", genpipe_hook);
+	printk("*genpipe_arprcv=%p\n", genpipe_arprcv);
 	printk("*genpipe_nop=%p\n", genpipe_nop);
 	printk("*genpipe_pack_rcv=%p\n", genpipe_pack.func);
 
@@ -505,10 +538,12 @@ static int __init genpipe_init(void)
 for (i=0;i<16;++i) {
 	printk("*ptype_base[%x]*\n", i);
 	list_for_each_entry_rcu(ptype, ptypebase[i], list) {
-		if (ntohs(ptype->type) == 0x0800) {
-			backup_func = ptype->func;
-			ptype->func = genpipe_hook;
-		}
+		if (ptype->func == arprcv)
+			ptype->func = genpipe_arprcv;
+		else if (ptype->func == iprcv)
+			ptype->func = genpipe_iprcv;
+		else if (ptype->func == ipv6rcv)
+			ptype->func = genpipe_ipv6rcv;
 		printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
 	}
 }
@@ -516,7 +551,7 @@ for (i=0;i<16;++i) {
 	list_for_each_entry_rcu(ptype, ptypeall, list) {
 //		if (ptype->dev == device) {
 //			backup_func = ptype->func;
-//			ptype->func = genpipe_hook;
+//			ptype->func = genpipe_arprcv;
 //		}
 		printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
 	}
@@ -553,15 +588,19 @@ static void __exit genpipe_cleanup(void)
 	rcu_read_lock();
 for (i=0;i<16;++i) {
 	list_for_each_entry_rcu(ptype, ptypebase[i], list) {
-		if (ptype->func == genpipe_hook);
-			ptype->func = backup_func; 
+		if (ptype->func == genpipe_arprcv)
+			ptype->func = arprcv;
+		else if (ptype->func == genpipe_iprcv)
+			ptype->func = iprcv;
+		else if (ptype->func == genpipe_ipv6rcv)
+			ptype->func = ipv6rcv;
 	}
 	}
 	rcu_read_unlock();
 	rcu_read_lock();
 	list_for_each_entry_rcu(ptype, ptypeall, list) {
-		if (ptype->func == genpipe_hook);
-			ptype->func = backup_func; 
+//		if (ptype->func == genpipe_arprcv);
+//			ptype->func = backup_func; 
 	}
 	rcu_read_unlock();
 
