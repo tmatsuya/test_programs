@@ -1,0 +1,67 @@
+modprobe pktgen
+#yum install kernel-tools
+#cpupower -c all frequency-set -g performance
+#cpupower -c all frequency-set -g powersave
+#cpupower -c all frequency-set -g ondemand
+if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu5/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu5/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu6/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu6/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor ]; then
+echo performance >/sys/devices/system/cpu/cpu7/cpufreq/scaling_governor
+fi
+echo "rem_device_all"            > /proc/net/pktgen/kpktgend_0
+echo "add_device eth0"           > /proc/net/pktgen/kpktgend_0
+echo "count 100000"              > /proc/net/pktgen/eth0
+echo "clone_skb 1"               > /proc/net/pktgen/eth0
+echo "pkt_size 60"               > /proc/net/pktgen/eth0
+echo "delay 0"                   > /proc/net/pktgen/eth0
+echo "src_min 10.0.0.1"          > /proc/net/pktgen/eth0
+echo "src_max 10.0.0.1"          > /proc/net/pktgen/eth0
+echo "src_mac 02:00:00:00:00:01" > /proc/net/pktgen/eth0
+echo "dst 203.178.143.1"         > /proc/net/pktgen/eth0
+echo "dst_mac 00:00:5E:00:01:66" > /proc/net/pktgen/eth0
+echo "start"                     > /proc/net/pktgen/pgctrl
+cat /proc/net/pktgen/eth0
+rmmod pktgen
+if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu5/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu5/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu6/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu6/cpufreq/scaling_governor
+fi
+if [ -f /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor ]; then
+echo ondemand >/sys/devices/system/cpu/cpu7/cpufreq/scaling_governor
+fi

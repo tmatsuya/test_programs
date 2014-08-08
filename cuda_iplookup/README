@@ -1,0 +1,20 @@
+IP lookup test using CUDA and OPENMP
+-----------------------------
+
+[> Building tools
+You will need:
+ - wget
+ - NVIDIA CUDA TOOLKIT (http://developer.nvidia.com/cuda-zone)
+ - bgpdump (http://www.ris.ripe.net/source/bgpdump/)
+
+[> How to build
+ $ make
+
+[> Quickstart
+ $ export CUDA_PROFILE=1
+ $ export CUDA_PROFILE_LOG=profile.log
+ $ ./cuda_iplookup
+ $ cat profile.log
+ # ./openmp_iplookup
+
+Apr 20 2014 macchan@sfc.wide.ad.jp

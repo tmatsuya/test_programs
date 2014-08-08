@@ -1,0 +1,256 @@
+  4000b4:	00 90 90 90 90 90    	add    %dl,-0x6f6f6f70(%rax)
+  4000bd:	01 90 90 90 90 90    	add    %edx,-0x6f6f6f70(%rax)
+  4000c6:	02 90 90 90 90 90    	add    -0x6f6f6f70(%rax),%dl
+  4000cf:	03 90 90 90 90 90    	add    -0x6f6f6f70(%rax),%edx
+  4000d8:	04 90                	add    $0x90,%al
+  4000e1:	05 90 90 90 90       	add    $0x90909090,%eax
+  4000ea:	06                   	(bad)  
+  4000f3:	07                   	(bad)  
+  4000fc:	08 90 90 90 90 90    	or     %dl,-0x6f6f6f70(%rax)
+  400105:	09 90 90 90 90 90    	or     %edx,-0x6f6f6f70(%rax)
+  40010e:	0a 90 90 90 90 90    	or     -0x6f6f6f70(%rax),%dl
+  400117:	0b 90 90 90 90 90    	or     -0x6f6f6f70(%rax),%edx
+  400120:	0c 90                	or     $0x90,%al
+  400129:	0d 90 90 90 90       	or     $0x90909090,%eax
+  400132:	0e                   	(bad)  
+  40013b:	0f 90 90 90 90 90 90 	seto   -0x6f6f6f70(%rax)
+  400144:	10 90 90 90 90 90    	adc    %dl,-0x6f6f6f70(%rax)
+  40014d:	11 90 90 90 90 90    	adc    %edx,-0x6f6f6f70(%rax)
+  400156:	12 90 90 90 90 90    	adc    -0x6f6f6f70(%rax),%dl
+  40015f:	13 90 90 90 90 90    	adc    -0x6f6f6f70(%rax),%edx
+  400168:	14 90                	adc    $0x90,%al
+  400171:	15 90 90 90 90       	adc    $0x90909090,%eax
+  40017a:	16                   	(bad)  
+  400183:	17                   	(bad)  
+  40018c:	18 90 90 90 90 90    	sbb    %dl,-0x6f6f6f70(%rax)
+  400195:	19 90 90 90 90 90    	sbb    %edx,-0x6f6f6f70(%rax)
+  40019e:	1a 90 90 90 90 90    	sbb    -0x6f6f6f70(%rax),%dl
+  4001a7:	1b 90 90 90 90 90    	sbb    -0x6f6f6f70(%rax),%edx
+  4001b0:	1c 90                	sbb    $0x90,%al
+  4001b9:	1d 90 90 90 90       	sbb    $0x90909090,%eax
+  4001c2:	1e                   	(bad)  
+  4001cb:	1f                   	(bad)  
+  4001d4:	20 90 90 90 90 90    	and    %dl,-0x6f6f6f70(%rax)
+  4001dd:	21 90 90 90 90 90    	and    %edx,-0x6f6f6f70(%rax)
+  4001e6:	22 90 90 90 90 90    	and    -0x6f6f6f70(%rax),%dl
+  4001ef:	23 90 90 90 90 90    	and    -0x6f6f6f70(%rax),%edx
+  4001f8:	24 90                	and    $0x90,%al
+  400201:	25 90 90 90 90       	and    $0x90909090,%eax
+  40020a:	26                   	*es
+  400213:	27                   	(bad)  
+  40021c:	28 90 90 90 90 90    	sub    %dl,-0x6f6f6f70(%rax)
+  400225:	29 90 90 90 90 90    	sub    %edx,-0x6f6f6f70(%rax)
+  40022e:	2a 90 90 90 90 90    	sub    -0x6f6f6f70(%rax),%dl
+  400237:	2b 90 90 90 90 90    	sub    -0x6f6f6f70(%rax),%edx
+  400240:	2c 90                	sub    $0x90,%al
+  400249:	2d 90 90 90 90       	sub    $0x90909090,%eax
+  400252:	2e                   	*cs
+  40025b:	2f                   	(bad)  
+  400264:	30 90 90 90 90 90    	xor    %dl,-0x6f6f6f70(%rax)
+  40026d:	31 90 90 90 90 90    	xor    %edx,-0x6f6f6f70(%rax)
+  400276:	32 90 90 90 90 90    	xor    -0x6f6f6f70(%rax),%dl
+  40027f:	33 90 90 90 90 90    	xor    -0x6f6f6f70(%rax),%edx
+  400288:	34 90                	xor    $0x90,%al
+  400291:	35 90 90 90 90       	xor    $0x90909090,%eax
+  40029a:	36                   	*ss
+  4002a3:	37                   	(bad)  
+  4002ac:	38 90 90 90 90 90    	cmp    %dl,-0x6f6f6f70(%rax)
+  4002b5:	39 90 90 90 90 90    	cmp    %edx,-0x6f6f6f70(%rax)
+  4002be:	3a 90 90 90 90 90    	cmp    -0x6f6f6f70(%rax),%dl
+  4002c7:	3b 90 90 90 90 90    	cmp    -0x6f6f6f70(%rax),%edx
+  4002d0:	3c 90                	cmp    $0x90,%al
+  4002d9:	3d 90 90 90 90       	cmp    $0x90909090,%eax
+  4002e2:	3e                   	*ds
+  4002eb:	3f                   	(bad)  
+  4002f4:	40 90                	rex xchg %eax,%eax
+  4002fd:	41 90                	xchg   %eax,%r8d
+  400306:	42 90                	rex.X xchg %eax,%eax
+  40030f:	43 90                	rex.XB xchg %eax,%r8d
+  400318:	44 90                	rex.R xchg %eax,%eax
+  400321:	45 90                	rex.RB xchg %eax,%r8d
+  40032a:	46 90                	rex.RX xchg %eax,%eax
+  400333:	47 90                	rex.RXB xchg %eax,%r8d
+  40033c:	48 90                	rex.W nop
+  400345:	49 90                	xchg   %rax,%r8
+  40034e:	4a 90                	rex.WX xchg %rax,%rax
+  400357:	4b 90                	rex.WXB xchg %rax,%r8
+  400360:	4c 90                	rex.WR xchg %rax,%rax
+  400369:	4d 90                	rex.WRB xchg %rax,%r8
+  400372:	4e 90                	rex.WRX xchg %rax,%rax
+  40037b:	4f 90                	rex.WRXB xchg %rax,%r8
+  400384:	50                   	*push   %rax
+  40038d:	51                   	*push   %rcx
+  400396:	52                   	*push   %rdx
+  40039f:	53                   	*push   %rbx
+  4003a8:	54                   	*push   %rsp
+  4003b1:	55                   	*push   %rbp
+  4003ba:	56                   	*push   %rsi
+  4003c3:	57                   	*push   %rdi
+  4003cc:	58                   	*pop    %rax
+  4003d5:	59                   	*pop    %rcx
+  4003de:	5a                   	*pop    %rdx
+  4003e7:	5b                   	*pop    %rbx
+  4003f0:	5c                   	*pop    %rsp
+  4003f9:	5d                   	*pop    %rbp
+  400402:	5e                   	*pop    %rsi
+  40040b:	5f                   	*pop    %rdi
+  400414:	60                   	(bad)  
+  40041d:	61                   	(bad)  
+  400426:	62                   	(bad)  
+  40042f:	63 90 90 90 90 90    	movslq -0x6f6f6f70(%rax),%edx
+  400438:	64                   	*fs
+  400441:	65                   	*gs
+  40044a:	66 90                	xchg   %ax,%ax
+  400453:	67 90                	addr32 nop
+  40045c:	68 90 90 90 90       	pushq  $0xffffffff90909090
+  400465:	69 90 90 90 90 90 90 	imul   $0x6a909090,-0x6f6f6f70(%rax),%edx
+  40046c:	90 90 6a 
+  4000b6:       6a 90                   pushq  $0xffffffffffffff90
+  400477:	6b 90 90 90 90 90 90 	imul   $0xffffff90,-0x6f6f6f70(%rax),%edx
+  400480:	6c                   	*insb   (%dx),%es:(%rdi)
+  400489:	6d                   	*insl   (%dx),%es:(%rdi)
+  400492:	6e                   	*outsb  %ds:(%rsi),(%dx)
+  40049b:	6f                   	*outsl  %ds:(%rsi),(%dx)
+  4004a4:	70 90                	jo     0x400436
+  4004ad:	71 90                	jno    0x40043f
+  4004b6:	72 90                	jb     0x400448
+  4004bf:	73 90                	jae    0x400451
+  4004c8:	74 90                	je     0x40045a
+  4004d1:	75 90                	jne    0x400463
+  4004da:	76 90                	jbe    0x40046c
+  4004e3:	77 90                	ja     0x400475
+  4004ec:	78 90                	js     0x40047e
+  4004f5:	79 90                	jns    0x400487
+  4004fe:	7a 90                	jp     0x400490
+  400507:	7b 90                	jnp    0x400499
+  400510:	7c 90                	jl     0x4004a2
+  400519:	7d 90                	jge    0x4004ab
+  400522:	7e 90                	jle    0x4004b4
+  40052b:	7f 90                	jg     0x4004bd
+  400534:	80 90 90 90 90 90 90 	adcb   $0x90,-0x6f6f6f70(%rax)
+  40053d:	81 90 90 90 90 90 90 	adcl   $0x82909090,-0x6f6f6f70(%rax)
+  4000b6:       82                      (bad)  
+  40054f:	83 90 90 90 90 90 90 	adcl   $0xffffff90,-0x6f6f6f70(%rax)
+  400558:	84 90 90 90 90 90    	test   %dl,-0x6f6f6f70(%rax)
+  400561:	85 90 90 90 90 90    	test   %edx,-0x6f6f6f70(%rax)
+  40056a:	86 90 90 90 90 90    	xchg   %dl,-0x6f6f6f70(%rax)
+  400573:	87 90 90 90 90 90    	xchg   %edx,-0x6f6f6f70(%rax)
+  40057c:	88 90 90 90 90 90    	mov    %dl,-0x6f6f6f70(%rax)
+  400585:	89 90 90 90 90 90    	mov    %edx,-0x6f6f6f70(%rax)
+  40058e:	8a 90 90 90 90 90    	mov    -0x6f6f6f70(%rax),%dl
+  400597:	8b 90 90 90 90 90    	mov    -0x6f6f6f70(%rax),%edx
+  4005a0:	8c 90 90 90 90 90    	mov    %ss,-0x6f6f6f70(%rax)
+  4005a9:	8d 90 90 90 90 90    	lea    -0x6f6f6f70(%rax),%edx
+  4005b2:	8e 90 90 90 90 90    	mov    -0x6f6f6f70(%rax),%ss
+  4005bb:	8f                   	(bad)  
+  4005cc:	90                   	*nop
+  4005cd:	91                   	*xchg   %eax,%ecx
+  4005d6:	92                   	*xchg   %eax,%edx
+  4005df:	93                   	*xchg   %eax,%ebx
+  4005e8:	94                   	*xchg   %eax,%esp
+  4005f1:	95                   	*xchg   %eax,%ebp
+  4005fa:	96                   	*xchg   %eax,%esi
+  400603:	97                   	*xchg   %eax,%edi
+  40060c:	98                   	*cwtl   
+  400615:	99                   	*cltd   
+  40061e:	9a                   	(bad)  
+  400627:	9b                   	*fwait
+  400630:	9c                   	*pushfq 
+  400639:	9d                   	*popfq  
+  400642:	9e                   	*sahf   
+  40064b:	9f                   	*lahf   
+  400654:	a0 90 90 90 90 90 90 	movabs 0x9090909090909090,%al
+  40065d:	a1 90 90 90 90 90 90 	movabs 0x9090909090909090,%eax
+  400666:	a2 90 90 90 90 90 90 	movabs %al,0x9090909090909090
+  40066f:	a3 90 90 90 90 90 90 	movabs %eax,0x9090909090909090
+  400678:	a4                   	*movsb  %ds:(%rsi),%es:(%rdi)
+  400681:	a5                   	*movsl  %ds:(%rsi),%es:(%rdi)
+  40068a:	a6                   	*cmpsb  %es:(%rdi),%ds:(%rsi)
+  400693:	a7                   	*cmpsl  %es:(%rdi),%ds:(%rsi)
+  40069c:	a8 90                	test   $0x90,%al
+  4006a5:	a9 90 90 90 90       	test   $0x90909090,%eax
+  4006ae:	aa                   	*stos   %al,%es:(%rdi)
+  4006b7:	ab                   	*stos   %eax,%es:(%rdi)
+  4006c0:	ac                   	*lods   %ds:(%rsi),%al
+  4006c9:	ad                   	*lods   %ds:(%rsi),%eax
+  4006d2:	ae                   	*scas   %es:(%rdi),%al
+  4006db:	af                   	*scas   %es:(%rdi),%eax
+  4006e4:	b0 90                	mov    $0x90,%al
+  4006ed:	b1 90                	mov    $0x90,%cl
+  4006f6:	b2 90                	mov    $0x90,%dl
+  4006ff:	b3 90                	mov    $0x90,%bl
+  400708:	b4 90                	mov    $0x90,%ah
+  400711:	b5 90                	mov    $0x90,%ch
+  40071a:	b6 90                	mov    $0x90,%dh
+  400723:	b7 90                	mov    $0x90,%bh
+  40072c:	b8 90 90 90 90       	mov    $0x90909090,%eax
+  400735:	b9 90 90 90 90       	mov    $0x90909090,%ecx
+  40073e:	ba 90 90 90 90       	mov    $0x90909090,%edx
+  400747:	bb 90 90 90 90       	mov    $0x90909090,%ebx
+  400750:	bc 90 90 90 90       	mov    $0x90909090,%esp
+  400759:	bd 90 90 90 90       	mov    $0x90909090,%ebp
+  400762:	be 90 90 90 90       	mov    $0x90909090,%esi
+  40076b:	bf 90 90 90 90       	mov    $0x90909090,%edi
+  400774:	c0 90 90 90 90 90 90 	rclb   $0x90,-0x6f6f6f70(%rax)
+  40077d:	c1 90 90 90 90 90 90 	rcll   $0x90,-0x6f6f6f70(%rax)
+  400786:	c2 90 90             	retq   $0x9090
+  40078f:	c3                   	*retq   
+  400798:	c4                   	(bad)  
+  4007a1:	c5 90 90             	(bad)  
+  4007aa:	c6                   	(bad)  
+  4007b3:	c7                   	(bad)  
+  4007bc:	c8 90 90 90          	enterq $0x9090,$0x90
+  4007c5:	c9                   	*leaveq 
+  4007ce:	ca 90 90             	lret   $0x9090
+  4007d7:	cb                   	*lret   
+  4007e0:	cc                   	*int3   
+  4007e9:	cd 90                	int    $0x90
+  4007f2:	ce                   	(bad)  
+  4007fb:	cf                   	*iret   
+  400804:	d0 90 90 90 90 90    	rclb   -0x6f6f6f70(%rax)
+  40080d:	d1 90 90 90 90 90    	rcll   -0x6f6f6f70(%rax)
+  400816:	d2 90 90 90 90 90    	rclb   %cl,-0x6f6f6f70(%rax)
+  40081f:	d3 90 90 90 90 90    	rcll   %cl,-0x6f6f6f70(%rax)
+  400828:	d4                   	(bad)  
+  400831:	d5                   	(bad)  
+  40083a:	d6                   	(bad)  
+  400843:	d7                   	*xlat   %ds:(%rbx)
+  40084c:	d8 90 90 90 90 90    	fcoms  -0x6f6f6f70(%rax)
+  40085e:	da 90 90 90 90 90    	ficoml -0x6f6f6f70(%rax)
+  400867:	db 90 90 90 90 90    	fistl  -0x6f6f6f70(%rax)
+  400870:	dc 90 90 90 90 90    	fcoml  -0x6f6f6f70(%rax)
+  400879:	dd 90 90 90 90 90    	fstl   -0x6f6f6f70(%rax)
+  400882:	de 90 90 90 90 90    	ficom  -0x6f6f6f70(%rax)
+  40088b:	df 90 90 90 90 90    	fist   -0x6f6f6f70(%rax)
+  400894:	e0 90                	loopne 0x400826
+  40089d:	e1 90                	loope  0x40082f
+  4008a6:	e2 90                	loop   0x400838
+  4008af:	e3 90                	jrcxz  0x400841
+  4008b8:	e4 90                	in     $0x90,%al
+  4008c1:	e5 90                	in     $0x90,%eax
+  4008ca:	e6 90                	out    %al,$0x90
+  4008d3:	e7 90                	out    %eax,$0x90
+  4008dc:	e8 90 90 90 90       	callq  0xffffffff90d09971
+  4008e5:	e9 90 90 90 90       	jmpq   0xffffffff90d0997a
+  4008ee:	ea                   	(bad)  
+  4008f7:	eb 90                	jmp    0x400889
+  400900:	ec                   	*in     (%dx),%al
+  400909:	ed                   	*in     (%dx),%eax
+  400912:	ee                   	*out    %al,(%dx)
+  40091b:	ef                   	*out    %eax,(%dx)
+  400924:	f0 90                	lock nop
+  40092d:	f1                   	*icebp  
+  400936:	f2 90                	(bad)  
+  40093f:	f3 90                	pause  
+  400948:	f4                   	*hlt    
+  400951:	f5                   	*cmc    
+  40095a:	f6 90 90 90 90 90    	notb   -0x6f6f6f70(%rax)
+  400963:	f7 90 90 90 90 90    	notl   -0x6f6f6f70(%rax)
+  40096c:	f8                   	*clc    
+  400975:	f9                   	*stc    
+  40097e:	fa                   	*cli    
+  400987:	fb                   	*sti    
+  400990:	fc                   	*cld    
+  400999:	fd                   	*std    
+  4009a2:	fe                   	(bad)  
+  4009ab:	ff 90 90 90 90 90    	callq  *-0x6f6f6f70(%rax)
