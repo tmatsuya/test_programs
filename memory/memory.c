@@ -12,7 +12,11 @@
 // sudo nvram boot-args="kmem=1"
 //
 
+#ifdef __APPLE__
+#define	MEM_DEVICE	"/dev/kmem"
+#else
 #define	MEM_DEVICE	"/dev/mem"
+#endif
 
 WINDOW *win;
 int mem_fd;
@@ -34,7 +38,7 @@ int display_memory(unsigned long long addr)
 	for (y=0; y<LINES-5; ++y) {
 		mvwprintw(win, y+3, 1, "%016llX", (addr + (y << 4) ));
 		for (x=0; x<16; ++x) {
-			lseek64(mem_fd, (unsigned long long)addr+(unsigned long long)(y<<4)+(unsigned long long)x, SEEK_SET);
+			lseek(mem_fd, (unsigned long long)addr+(unsigned long long)(y<<4)+(unsigned long long)x, SEEK_SET);
 			read(mem_fd, &c, 1);
 			c &= 0xff;
 			// hex code
@@ -180,7 +184,7 @@ int main(int argc, char *argv[])
 						else
 							idata |= c - 'A' + 10;
 						// write memory
-						lseek64(mem_fd, (unsigned long long)top_addr+(unsigned long long)(y<<4)+(unsigned long long)x, SEEK_SET);
+						lseek(mem_fd, (unsigned long long)top_addr+(unsigned long long)(y<<4)+(unsigned long long)x, SEEK_SET);
 						write(mem_fd, &idata, 1);
 
 						// skip a byte
