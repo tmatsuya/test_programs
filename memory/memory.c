@@ -23,7 +23,7 @@ int display_memory(unsigned long long addr)
 	int i, y, x;
 	unsigned char c;
 	mvwaddstr(win, 1, 2, "Address");
-	mvwaddstr(win, LINES-2, 2, "Exit:[Ctrl+X] PageDown:[Ctrl+F] PageUp:[Ctrl+B] Redraw:[CTRL+L] or [ESC]");
+	mvwaddstr(win, LINES-2, 1, "Exit:[Ctrl+X] PageDown:[Ctrl+F] PageUp:[Ctrl+B] Redraw On/Off:[Ctrl+L] Redraw:[ESC]");
 	for (i=0; i<16; ++i) {
 		mvwprintw(win, 1, i*3+18, "+%X", i);
 	}
@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
 {
 	int c;
 	int y, x, n;
+	int autoredraw = 1;
 	int idata;
 	char device_file[256];
 
@@ -89,6 +90,7 @@ int main(int argc, char *argv[])
 	win = newwin(LINES,COLS-1,0,0);
 	box(win,'|','-');
 	keypad(win, TRUE);
+	wtimeout(win, 500);
 
 	display_memory(top_addr);
 
@@ -103,6 +105,9 @@ int main(int argc, char *argv[])
 				if (y > 0) {
 					n = 0;
 					--y;
+				} else {
+					top_addr -= 0x10;
+					display_memory(top_addr);
 				}
 				break;
 			case KEY_DOWN:
@@ -111,6 +116,9 @@ int main(int argc, char *argv[])
 				if (y < LINES-6) {
 					n = 0;
 					++y;
+				} else {
+					top_addr += 0x10;
+					display_memory(top_addr);
 				}
 				break;
 			case KEY_LEFT:
@@ -139,9 +147,18 @@ int main(int argc, char *argv[])
 				top_addr -= (LINES-6)*0x10; 
 				display_memory(top_addr);
 				break;
+			// Auto Redraw
+			case -1:
+				if (autoredraw)
+					display_memory(top_addr);
+				break;
 			// Redraw
-			case 'L'-0x40:
 			case 0x1b:
+				display_memory(top_addr);
+				break;
+			// Redraw On/Off
+			case 'L'-0x40:
+				autoredraw = !autoredraw;
 				display_memory(top_addr);
 				break;
 			default:
