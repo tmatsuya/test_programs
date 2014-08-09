@@ -99,7 +99,7 @@ struct _pbuf_dma {
 	unsigned char   *tx_read_ptr;		/* tx read ptr */
 } static pbuf0={0,0,0,0,0,0,0,0};
 
-unsigned long rx_count[256];
+unsigned long rx_count[NR_CPUS];
 struct net_device* device = NULL; 
 
 int genpipe_pack_rcv(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
@@ -310,7 +310,7 @@ static ssize_t genpipe_read(struct file *filp, char __user *buf,
 #endif
 
 	rxcounts=0;
-	for (i=0;i<256;++i)
+	for (i=0;i<NR_CPUS;++i)
 		rxcounts += rx_count[i];
 
 	sprintf( tmp, "%11lu\r\n", rxcounts);
@@ -592,7 +592,7 @@ static int __init genpipe_init(void)
 	genpipe_pack.dev = device;
 //	dev_add_pack(&genpipe_pack);
 
-	for (i=0; i<256;++i)
+	for (i=0; i<NR_CPUS;++i)
 		rx_count[i] = 0;
 
 	return 0;
