@@ -29,6 +29,7 @@
 #include <asm/segment.h>
 #include <asm/uaccess.h>
 #include <linux/buffer_head.h>
+#include <linux/spinlock.h>
 
 //#define	DEBUG
 
@@ -82,7 +83,7 @@ printk( "end=%x\n", (unsigned int)X->end);
 #define	__devexit_p
 #endif
 
-static struct semaphore genpipe_sem;
+static spinlock_t rx_lock;
 static wait_queue_head_t write_q;
 static wait_queue_head_t read_q;
 
@@ -265,7 +266,9 @@ int genpipe_pack_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_
 	printk(KERN_DEBUG "Test protocol: Packet Received with length: %u\n", skb->len+18);
 #endif
 
+	spin_lock(&rx_lock);
 	++rx_count;
+	spin_unlock(&rx_lock);
 //	frame_len = skb->len;
 //	p = skb_mac_header(skb);
 //	p = skb->data;
@@ -544,7 +547,6 @@ static int __init genpipe_init(void)
 		goto error;
 	}
 
-	sema_init( &genpipe_sem, 1 );
 	init_waitqueue_head( &read_q );
 	init_waitqueue_head( &write_q );
 
