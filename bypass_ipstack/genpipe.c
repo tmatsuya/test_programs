@@ -202,8 +202,13 @@ int genpipe_arprcv(struct sk_buff *skb, struct net_device *dev, struct packet_ty
 //	printk("genpipe_arprcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
 	if (dev != genpipe_pack.dev)
 		return arprcv(skb, dev, pt, dev2);
-	else
+
+	/* Don't mangle buffer if shared */
+	if (!(skb = skb_share_check(skb, GFP_ATOMIC)))
 		return 0;
+
+	kfree_skb(skb);
+	return skb->len;
 }
 
 int genpipe_iprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
@@ -211,8 +216,13 @@ int genpipe_iprcv(struct sk_buff *skb, struct net_device *dev, struct packet_typ
 //	printk("genpipe_iprcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
 	if (dev != genpipe_pack.dev)
 		return iprcv(skb, dev, pt, dev2);
-	else
+
+	/* Don't mangle buffer if shared */
+	if (!(skb = skb_share_check(skb, GFP_ATOMIC)))
 		return 0;
+
+	kfree_skb(skb);
+	return skb->len;
 }
 
 int genpipe_ipv6rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
@@ -220,8 +230,13 @@ int genpipe_ipv6rcv(struct sk_buff *skb, struct net_device *dev, struct packet_t
 //	printk("genpipe_ipv6rcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
 	if (dev != genpipe_pack.dev)
 		return ipv6rcv(skb, dev, pt, dev2);
-	else
+
+	/* Don't mangle buffer if shared */
+	if (!(skb = skb_share_check(skb, GFP_ATOMIC)))
 		return 0;
+
+	kfree_skb(skb);
+	return skb->len;
 }
 
 int genpipe_nop(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
@@ -229,8 +244,13 @@ int genpipe_nop(struct sk_buff *skb, struct net_device *dev, struct packet_type 
 //	printk("genpipe_nop dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
 //	if (dev != genpipe_pack.dev)
 //		return nop(skb, dev, pt, dev2);
-//	else
+
+	/* Don't mangle buffer if shared */
+	if (!(skb = skb_share_check(skb, GFP_ATOMIC)))
 		return 0;
+
+	kfree_skb(skb);
+	return skb->len;
 }
 
 int genpipe_pack_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
