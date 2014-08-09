@@ -55,7 +55,7 @@
 //struct list_head ptype_all __read_mostly;
 //struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head *ptypeall   = 0LL;
-struct list_head *ptypebase[16];
+struct list_head *ptypebase[PTYPE_HASH_SIZE];
 int (*arprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*iprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*ipv6rcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
@@ -153,7 +153,7 @@ int get_table_entry(void)
 	char buf[128], *ptr;
 
 	arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
-	for (i=0;i<16;++i)
+	for (i=0;i<PTYPE_HASH_SIZE;++i)
 		ptypebase[i] = 0LL;
 
 	fp = file_open("/proc/kallsyms", O_RDONLY, 0);
@@ -177,7 +177,7 @@ int get_table_entry(void)
 			ptr = strnstr(buf, " ptype_base\n", sizeof(buf));
 			if (ptr && !ptypebase[0]) {
 				sscanf(ptr-19, "%llx", &ptypebase[0]);
-				for (i=1;i<16;++i)
+				for (i=1;i<PTYPE_HASH_SIZE;++i)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
@@ -188,7 +188,7 @@ int get_table_entry(void)
 		printk("iprcv=%p\n", iprcv);
 		printk("ipv6rcv=%p\n", ipv6rcv);
 		printk("ptype_all=%p\n", ptypeall);
-		for (i=0; i<16; ++i)
+		for (i=0; i<PTYPE_HASH_SIZE; ++i)
 			printk("ptype_base[%d]=%p\n", i, ptypebase[i]);
 
 		file_close(fp);
@@ -536,7 +536,7 @@ static int __init genpipe_init(void)
 
 	// macchan
 	rcu_read_lock();
-	for (i=0;i<16;++i) {
+	for (i=0;i<PTYPE_HASH_SIZE;++i) {
 		printk("*ptype_base[%x]*\n", i);
 		list_for_each_entry_rcu(ptype, ptypebase[i], list) {
 			if (ptype->func == arprcv)
@@ -587,7 +587,7 @@ static void __exit genpipe_cleanup(void)
 
 //macchan
 	rcu_read_lock();
-	for (i=0;i<16;++i) {
+	for (i=0;i<PTYPE_HASH_SIZE;++i) {
 		list_for_each_entry_rcu(ptype, ptypebase[i], list) {
 			if (ptype->func == genpipe_arprcv)
 				ptype->func = arprcv;
