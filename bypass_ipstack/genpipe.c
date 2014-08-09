@@ -99,7 +99,7 @@ struct _pbuf_dma {
 	unsigned char   *tx_read_ptr;		/* tx read ptr */
 } static pbuf0={0,0,0,0,0,0,0,0};
 
-unsigned long rx_count = 0;
+unsigned long rx_count[256];
 struct net_device* device = NULL; 
 
 int genpipe_pack_rcv(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
@@ -218,6 +218,14 @@ int genpipe_iprcv(struct sk_buff *skb, struct net_device *dev, struct packet_typ
 	if (dev != genpipe_pack.dev)
 		return iprcv(skb, dev, pt, dev2);
 
+	if (skb->pkt_type == PACKET_OUTGOING)	 // DROP loopback PACKET
+		goto lend;
+
+//	spin_lock(&rx_lock);
+	++rx_count[smp_processor_id()];
+//	spin_unlock(&rx_lock);
+
+lend:
 	/* Don't mangle buffer if shared */
 	if (!(skb = skb_share_check(skb, GFP_ATOMIC)))
 		return 0;
@@ -266,9 +274,9 @@ int genpipe_pack_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_
 	printk(KERN_DEBUG "Test protocol: Packet Received with length: %u\n", skb->len+18);
 #endif
 
-	spin_lock(&rx_lock);
-	++rx_count;
-	spin_unlock(&rx_lock);
+//	spin_lock(&rx_lock);
+	++rx_count[smp_processor_id()];
+//	spin_unlock(&rx_lock);
 //	frame_len = skb->len;
 //	p = skb_mac_header(skb);
 //	p = skb->data;
@@ -285,9 +293,9 @@ lend:
 static int genpipe_open(struct inode *inode, struct file *filp)
 {
 	printk("%s\n", __func__);
-	rtnl_lock();
-	dev_set_promiscuity(device, 1);
-	rtnl_unlock();
+//	rtnl_lock();
+//	dev_set_promiscuity(device, 1);
+//	rtnl_unlock();
 
 	return 0;
 }
@@ -296,13 +304,16 @@ static ssize_t genpipe_read(struct file *filp, char __user *buf,
 			   size_t count, loff_t *ppos)
 {
 	char tmp[16];
-	int copy_len, available_read_len;
+	int copy_len, available_read_len, i, rxcounts;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
+	rxcounts=0;
+	for (i=0;i<256;++i)
+		rxcounts += rx_count[i];
 
-	sprintf( tmp, "%11lu\r\n", rx_count);
+	sprintf( tmp, "%11lu\r\n", rxcounts);
 	if ( copy_to_user( buf, tmp, 13 ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
@@ -579,9 +590,10 @@ static int __init genpipe_init(void)
 	rcu_read_unlock();
 
 	genpipe_pack.dev = device;
-	dev_add_pack(&genpipe_pack);
+//	dev_add_pack(&genpipe_pack);
 
-	rx_count = 0;
+	for (i=0; i<256;++i)
+		rx_count[i] = 0;
 
 	return 0;
 
@@ -605,7 +617,7 @@ static void __exit genpipe_cleanup(void)
 	struct packet_type *ptype = NULL;
 	misc_deregister(&genpipe_dev);
 
-	dev_remove_pack(&genpipe_pack);
+//	dev_remove_pack(&genpipe_pack);
 
 //macchan
 	rcu_read_lock();
