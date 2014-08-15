@@ -215,10 +215,10 @@ int genpipe_arprcv(struct sk_buff *skb, struct net_device *dev, struct packet_ty
 int genpipe_iprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
 {
 //	printk("genpipe_iprcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
-	if (dev != genpipe_pack.dev)
+	if (unlikely(dev != genpipe_pack.dev))
 		return iprcv(skb, dev, pt, dev2);
 
-	if (skb->pkt_type == PACKET_OUTGOING)	 // DROP loopback PACKET
+	if (unlikely(skb->pkt_type == PACKET_OUTGOING))	 // DROP loopback PACKET
 		goto lend;
 
 //	spin_lock(&rx_lock);
