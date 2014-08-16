@@ -3,7 +3,7 @@
 sudo ifconfig $1 up
 sudo ethtool -A $1 autoneg off rx off tx off
 sudo ethtool -s $1 speed 10000 duplex full
-sudo ethtool -K $1 gro on
+sudo ethtool -K $1 gro off
 sudo ethtool -k $1
 sudo ethtool -G $1 rx 4096
 sudo ethtool -g $1
