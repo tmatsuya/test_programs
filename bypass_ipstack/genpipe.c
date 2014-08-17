@@ -209,6 +209,31 @@ int get_table_entry(void)
 	return -1;	
 }
 
+
+int hook_ixgbe(void)
+{
+	unsigned char *ptr;
+	unsigned int dest;
+	int i;
+
+	if (netifreceiveskb == 0LL || ixgbecleanrxirq == 0LL)
+		return -1;
+
+	ptr = ixgbecleanrxirq;
+	for (i=0; i<0x10000; ++ptr, ++i) {
+		// check callq (0xe8 + 4byte)
+		if (*ptr == 0xe8) {
+			dest = *(unsigned int *)(ptr+1);
+			if (((unsigned int)ptr + 5 + dest) == (unsigned int)netifreceiveskb) {
+				printk( "%p: callq netif_receive_skb()\n", ptr);
+				return 0;
+			}
+		}
+	}
+
+	return -1;
+}
+
 int genpipe_arprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
 {
 //	printk("genpipe_arprcv dev=%p,dev2=%p,genpipe_pack.dev=%p\n", dev, dev2,genpipe_pack.dev);
@@ -556,6 +581,12 @@ static int __init genpipe_init(void)
 	
 	if (get_table_entry() < 0) {
 		printk("fail to open /peoc/ka\n");
+		ret = -1;
+		goto error;
+	}
+
+	if (hook_ixgbe() < 0) {
+		printk("error in hook_ixgbe()\n");
 		ret = -1;
 		goto error;
 	}
