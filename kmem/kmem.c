@@ -6,6 +6,8 @@
 #include <linux/wait.h>		/* wait_queue_head_t */
 #include <linux/interrupt.h>
 #include <linux/version.h>
+#include <linux/mm.h>
+#include <linux/vmalloc.h>
 
 #include <linux/types.h>
 #include <linux/kernel.h>
@@ -30,6 +32,34 @@
 #endif
 
 static unsigned long long kmem_position = 0LL;
+
+static int kmem_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	unsigned long start = vma->vm_start;
+	unsigned long size = vma->vm_end - vma->vm_start;
+	unsigned long offset = vma->vm_pgoff << PAGE_SHIFT;
+	unsigned long page, pos;
+
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT))
+		return -EINVAL;
+
+	pos = offset;
+
+	while (size > 0) {
+		page = vmalloc_to_pfn((void *)pos);
+		if (remap_pfn_range(vma, start, page, PAGE_SIZE, PAGE_SHARED)) {
+			return -EAGAIN;
+		}
+		start += PAGE_SIZE;
+		pos += PAGE_SIZE;
+		if (size > PAGE_SIZE)
+			size -= PAGE_SIZE;
+		else
+			size = 0;
+	}
+	
+	return 0;
+}
 
 static int kmem_open(struct inode *inode, struct file *filp)
 {
@@ -114,6 +144,7 @@ static struct file_operations kmem_fops = {
 	.write		= kmem_write,
 	.compat_ioctl	= kmem_ioctl,
 	.llseek		= kmem_llseek,
+	.mmap		= kmem_mmap,
 	.open		= kmem_open,
 	.release	= kmem_release,
 };
