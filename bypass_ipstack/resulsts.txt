@@ -58,7 +58,7 @@
  10,049,011 pps (RSS=2,2 intel)
  10,048,454 pps (RSS=2,2 intel)
   5,951,436 pps (RSS=1,1 intel)
-  4,980,300 pps (RSS=1,1 intel)
+  5,980,300 pps (RSS=1,1 intel)
 
 2014/08/17 (Kernel 3.15.9-200.fc20.x86_64, CPU i7-4770 3.4GHz)
 
