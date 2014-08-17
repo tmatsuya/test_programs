@@ -57,6 +57,9 @@
 //struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head *ptypeall   = 0LL;
 struct list_head *ptypebase[PTYPE_HASH_SIZE];
+
+int (*netifreceiveskb)(struct sk_buff *);
+int (*ixgbecleanrxirq)(struct ixgbe_q_vector *, struct ixgbe_ring *, const int );
 int (*arprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*iprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*ipv6rcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
@@ -153,7 +156,7 @@ int get_table_entry(void)
 	int pos, size, i;
 	char buf[128], *ptr;
 
-	arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
+	netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
 	for (i=0;i<PTYPE_HASH_SIZE;++i)
 		ptypebase[i] = 0LL;
 
@@ -163,6 +166,12 @@ int get_table_entry(void)
 		pos=0;
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
+			ptr = strnstr(buf, " netif_receive_skb\n", sizeof(buf));
+			if (ptr && !netifreceiveskb)
+				sscanf(ptr-19, "%llx", &netifreceiveskb);
+			ptr = strnstr(buf, "ixgbe_clean_rx_irq", sizeof(buf));
+			if (ptr && !ixgbecleanrxirq)
+				sscanf(ptr-19, "%llx", &ixgbecleanrxirq);
 			ptr = strnstr(buf, " arp_rcv\n", sizeof(buf));
 			if (ptr && !arprcv)
 				sscanf(ptr-19, "%llx", &arprcv);
@@ -182,9 +191,11 @@ int get_table_entry(void)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
+			if (netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
+		printk("netifreceiveskb=%p\n", netifreceiveskb);
+		printk("ixgbecleanrxirq=%p\n", ixgbecleanrxirq);
 		printk("arprcv=%p\n", arprcv);
 		printk("iprcv=%p\n", iprcv);
 		printk("ipv6rcv=%p\n", ipv6rcv);
