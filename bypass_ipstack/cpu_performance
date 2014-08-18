@@ -3,3 +3,7 @@ sudo cpupower -c all frequency-set -g performance
 #sudo modprobe ixgbe RSS=4,4
 sudo systemctl stop firewalld
 sudo systemctl stop iptables
+# tc qdisc del dev eth0 root
+# tc -s qdisc ls dev eth0
+# tc qdisc show dev eth0
+
