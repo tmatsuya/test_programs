@@ -31,6 +31,9 @@
 #include <linux/buffer_head.h>
 #include <linux/spinlock.h>
 
+#include "get_pte.c"
+
+
 //#define	DEBUG
 
 #ifndef	DRV_NAME
@@ -210,10 +213,16 @@ int get_table_entry(void)
 }
 
 
+int genpipe_netif_receive_skb(struct sk_buff *skb)
+{
+		return netifreceiveskb(skb);
+}
+
 int hook_ixgbe(void)
 {
 	unsigned char *ptr;
 	unsigned int dest;
+	pte_t *pte;
 	int i;
 
 	if (netifreceiveskb == 0LL || ixgbecleanrxirq == 0LL)
@@ -226,6 +235,11 @@ int hook_ixgbe(void)
 			dest = *(unsigned int *)(ptr+1);
 			if (((unsigned int)ptr + 5 + dest) == (unsigned int)netifreceiveskb) {
 				printk( "%p: callq netif_receive_skb()\n", ptr);
+				if ( (pte = get_pte((unsigned long long)ptr)) ) {
+					pte->pte |= (_PAGE_RW);
+					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_netif_receive_skb - ((unsigned int)ptr + 5);
+					pte->pte &= ~(_PAGE_RW);
+				}
 				return 0;
 			}
 		}
