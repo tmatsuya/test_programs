@@ -61,6 +61,7 @@
 struct list_head *ptypeall   = 0LL;
 struct list_head *ptypebase[PTYPE_HASH_SIZE];
 
+struct sk_buff *(*netdevallocskb)(struct net_device *, unsigned int, gfp_t);
 int (*netifrx)(struct sk_buff *);
 gro_result_t (*napigroreceive)(struct napi_struct *, struct sk_buff *);
 int (*netifreceiveskb)(struct sk_buff *);
@@ -176,6 +177,9 @@ int get_table_entry(void)
 		pos=0;
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
+			ptr = strnstr(buf, " __netdev_alloc_skb\n", sizeof(buf));
+			if (ptr && !netdevallocskb)
+				sscanf(ptr-19, "%llx", &netdevallocskb);
 			ptr = strnstr(buf, " netif_rx\n", sizeof(buf));
 			if (ptr && !netifrx)
 				sscanf(ptr-19, "%llx", &netifrx);
@@ -207,9 +211,10 @@ int get_table_entry(void)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
+			if (netdevallocskb != 0LL && netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
+		printk("__netdevallocskb=%p\n", netdevallocskb);
 		printk("netifrx=%p\n", netifrx);
 		printk("napigroreceive=%p\n", napigroreceive);
 		printk("netifreceiveskb=%p\n", netifreceiveskb);
@@ -227,6 +232,12 @@ int get_table_entry(void)
 	return -1;	
 }
 
+struct sk_buff *genpipe___netdev_alloc_skb(struct net_device *dev,
+                                   unsigned int length, gfp_t gfp_mask)
+{
+	return __netdev_alloc_skb(dev, length, gfp_mask);
+}
+
 int genpipe_netif_rx(struct sk_buff *skb)
 {
 	++rx_count[smp_processor_id()];
@@ -236,7 +247,12 @@ int genpipe_netif_rx(struct sk_buff *skb)
 gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
 	++rx_count[smp_processor_id()];
+#if 1
+	kfree_skb(skb);
+	return NET_RX_SUCCESS;
+#else
 	return napi_gro_receive(napi, skb);
+#endif
 }
 
 int genpipe_netif_receive_skb(struct sk_buff *skb)
