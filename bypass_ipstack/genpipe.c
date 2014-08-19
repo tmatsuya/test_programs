@@ -71,15 +71,20 @@ int (*iprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct
 int (*ipv6rcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*backup_func)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 
-static unsigned int hook_dev_add_pack = 0;
 static char *interface = IF_NAME;
+static unsigned int hook_dev_add_pack = 0;
+static unsigned int hook_driver = 0;
+
 static struct sk_buff *genpipe_skb = 0;
+static int genpipe_skb_count = 0;
 
 module_param(interface , charp , S_IRUGO);
 module_param(hook_dev_add_pack, uint, 0644);
+module_param(hook_driver, uint, 0644);
 
 MODULE_PARM_DESC(interface, "interface" );
 MODULE_PARM_DESC(hook_dev_add_pack, "Set to 1 to hook dev_add_pack entries");
+MODULE_PARM_DESC(hook_driver, "Set to 1 to hook driver entries");
 
 #define	INFO_SKB(X) \
 printk( "len=%u,", X->len); \
@@ -236,8 +241,10 @@ int get_table_entry(void)
 struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev,
                                    unsigned int length, gfp_t gfp_mask)
 {
-	if (unlikely(genpipe_skb == 0))
+//	if (unlikely(genpipe_skb == 0 || genpipe_skb_count == 1)) {
 		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
+//	}
+//	genpipe_skb_count = 1;
 
 	return genpipe_skb;
 }
@@ -252,8 +259,10 @@ gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *
 {
 	++rx_count[smp_processor_id()];
 #if 1
-	if (unlikely(skb != genpipe_skb))
+//	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
+
+//	genpipe_skb_count = 0;
 
 	return NET_RX_SUCCESS;
 #else
@@ -264,7 +273,7 @@ gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *
 int genpipe_netif_receive_skb(struct sk_buff *skb)
 {
 	++rx_count[smp_processor_id()];
-#if 1
+#if 0
 	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
 
@@ -274,7 +283,7 @@ int genpipe_netif_receive_skb(struct sk_buff *skb)
 #endif
 }
 
-int hook_ixgbe(void)
+int hook_ixgbe(int level)
 {
 	unsigned char *ptr;
 	unsigned int dest;
@@ -684,10 +693,12 @@ static int __init genpipe_init(void)
 		goto error;
 	}
 
-	if (hook_ixgbe() < 0) {
-		printk("error in hook_ixgbe()\n");
-		ret = -1;
-		goto error;
+	if (hook_driver > 0) {
+		if (hook_ixgbe(hook_driver) < 0) {
+			printk("error in hook_ixgbe()\n");
+			ret = -1;
+			goto error;
+		}
 	}
 
 	/* register character device */
