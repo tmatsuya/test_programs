@@ -27,11 +27,11 @@ pte_t *get_pte(unsigned long long vaddr)
 	pgd_t *pgd = pgd_offset(current->mm, vaddr);
 	pud_t *pud;
 	pmd_t *pmd;
-	pte_t *pte;
+	pte_t *pte = 0;
 
 	/* to lock the page */
 	struct page *pg;
-	unsigned long long paddr;
+//	unsigned long long paddr;
 
 	if (bad_address(pgd)) {
 		printk(KERN_ALERT "[nskk] Alert: bad address of pgd %p\n", pgd);

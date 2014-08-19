@@ -61,6 +61,8 @@
 struct list_head *ptypeall   = 0LL;
 struct list_head *ptypebase[PTYPE_HASH_SIZE];
 
+int (*netifrx)(struct sk_buff *);
+gro_result_t (*napigroreceive)(struct napi_struct *, struct sk_buff *);
 int (*netifreceiveskb)(struct sk_buff *);
 int (*ixgbecleanrxirq)(struct ixgbe_q_vector *, struct ixgbe_ring *, const int );
 int (*arprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
@@ -68,9 +70,14 @@ int (*iprcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct
 int (*ipv6rcv)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 int (*backup_func)(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
 
+static unsigned int hook_dev_add_pack = 0;
 static char *interface = IF_NAME;
-module_param( interface , charp , S_IRUGO);
-MODULE_PARM_DESC( interface, "interface" );
+
+module_param(interface , charp , S_IRUGO);
+module_param(hook_dev_add_pack, uint, 0644);
+
+MODULE_PARM_DESC(interface, "interface" );
+MODULE_PARM_DESC(hook_dev_add_pack, "Set to 1 to hook dev_add_pack entries");
 
 #define	INFO_SKB(X) \
 printk( "len=%u,", X->len); \
@@ -159,7 +166,7 @@ int get_table_entry(void)
 	int pos, size, i;
 	char buf[128], *ptr;
 
-	netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
+	netifrx = napigroreceive = netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
 	for (i=0;i<PTYPE_HASH_SIZE;++i)
 		ptypebase[i] = 0LL;
 
@@ -169,6 +176,12 @@ int get_table_entry(void)
 		pos=0;
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
+			ptr = strnstr(buf, " netif_rx\n", sizeof(buf));
+			if (ptr && !netifrx)
+				sscanf(ptr-19, "%llx", &netifrx);
+			ptr = strnstr(buf, " napi_gro_receive\n", sizeof(buf));
+			if (ptr && !napigroreceive)
+				sscanf(ptr-19, "%llx", &napigroreceive);
 			ptr = strnstr(buf, " netif_receive_skb\n", sizeof(buf));
 			if (ptr && !netifreceiveskb)
 				sscanf(ptr-19, "%llx", &netifreceiveskb);
@@ -194,9 +207,11 @@ int get_table_entry(void)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
+			if (netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
+		printk("netifrx=%p\n", netifrx);
+		printk("napigroreceive=%p\n", napigroreceive);
 		printk("netifreceiveskb=%p\n", netifreceiveskb);
 		printk("ixgbecleanrxirq=%p\n", ixgbecleanrxirq);
 		printk("arprcv=%p\n", arprcv);
@@ -212,20 +227,35 @@ int get_table_entry(void)
 	return -1;	
 }
 
+int genpipe_netif_rx(struct sk_buff *skb)
+{
+	++rx_count[smp_processor_id()];
+	return netif_rx(skb);
+}
+
+gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
+{
+	++rx_count[smp_processor_id()];
+	return napi_gro_receive(napi, skb);
+}
 
 int genpipe_netif_receive_skb(struct sk_buff *skb)
 {
-		return netifreceiveskb(skb);
+	++rx_count[smp_processor_id()];
+	return netifreceiveskb(skb);
 }
 
 int hook_ixgbe(void)
 {
 	unsigned char *ptr;
 	unsigned int dest;
-	pte_t *pte;
+	pte_t *pte = 0;
 	int i;
 
 	if (netifreceiveskb == 0LL || ixgbecleanrxirq == 0LL)
+		return -1;
+
+	if (napigroreceive == 0LL || ixgbecleanrxirq == 0LL)
 		return -1;
 
 	ptr = ixgbecleanrxirq;
@@ -240,12 +270,27 @@ int hook_ixgbe(void)
 					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_netif_receive_skb - ((unsigned int)ptr + 5);
 					pte->pte &= ~(_PAGE_RW);
 				}
-				return 0;
+			}
+			if (((unsigned int)ptr + 5 + dest) == (unsigned int)napigroreceive) {
+				printk( "%p: callq napi_gro_receive()\n", ptr);
+				if ( (pte = get_pte((unsigned long long)ptr)) ) {
+					pte->pte |= (_PAGE_RW);
+					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_napi_gro_receive - ((unsigned int)ptr + 5);
+					pte->pte &= ~(_PAGE_RW);
+				}
+			}
+			if (((unsigned int)ptr + 5 + dest) == (unsigned int)netifrx) {
+				printk( "%p: callq netif_rx()\n", ptr);
+				if ( (pte = get_pte((unsigned long long)ptr)) ) {
+					pte->pte |= (_PAGE_RW);
+					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_netif_rx - ((unsigned int)ptr + 5);
+					pte->pte &= ~(_PAGE_RW);
+				}
 			}
 		}
 	}
 
-	return -1;
+	return 0;
 }
 
 int genpipe_arprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
@@ -624,26 +669,28 @@ static int __init genpipe_init(void)
 	printk("*genpipe_pack_rcv=%p\n", genpipe_pack.func);
 
 	// macchan
-	rcu_read_lock();
-	for (i=0;i<PTYPE_HASH_SIZE;++i) {
-		printk("*ptype_base[%x]*\n", i);
-		list_for_each_entry_rcu(ptype, ptypebase[i], list) {
-			if (ptype->func == arprcv)
-				ptype->func = genpipe_arprcv;
-			else if (ptype->func == iprcv)
-				ptype->func = genpipe_iprcv;
-			else if (ptype->func == ipv6rcv)
-				ptype->func = genpipe_ipv6rcv;
+	if (hook_dev_add_pack) {
+		rcu_read_lock();
+		for (i=0;i<PTYPE_HASH_SIZE;++i) {
+			printk("*ptype_base[%x]*\n", i);
+			list_for_each_entry_rcu(ptype, ptypebase[i], list) {
+				if (ptype->func == arprcv)
+					ptype->func = genpipe_arprcv;
+				else if (ptype->func == iprcv)
+					ptype->func = genpipe_iprcv;
+				else if (ptype->func == ipv6rcv)
+					ptype->func = genpipe_ipv6rcv;
+				printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
+			}
+		}
+		printk("*ptype*\n");
+		list_for_each_entry_rcu(ptype, ptypeall, list) {
+			backup_func = ptype->func;
+		ptype->func = genpipe_nop;
 			printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
 		}
+		rcu_read_unlock();
 	}
-	printk("*ptype*\n");
-	list_for_each_entry_rcu(ptype, ptypeall, list) {
-		backup_func = ptype->func;
-		ptype->func = genpipe_nop;
-		printk("dev=%p,type=%04x, func=%p\n", ptype->dev, ntohs(ptype->type), ptype->func);
-	}
-	rcu_read_unlock();
 
 	genpipe_pack.dev = device;
 //	dev_add_pack(&genpipe_pack);
@@ -676,25 +723,25 @@ static void __exit genpipe_cleanup(void)
 //	dev_remove_pack(&genpipe_pack);
 
 //macchan
-	rcu_read_lock();
-	for (i=0;i<PTYPE_HASH_SIZE;++i) {
-		list_for_each_entry_rcu(ptype, ptypebase[i], list) {
-			if (ptype->func == genpipe_arprcv)
-				ptype->func = arprcv;
-			else if (ptype->func == genpipe_iprcv)
-				ptype->func = iprcv;
-			else if (ptype->func == genpipe_ipv6rcv)
-				ptype->func = ipv6rcv;
+	if (hook_dev_add_pack) {
+		rcu_read_lock();
+		for (i=0;i<PTYPE_HASH_SIZE;++i) {
+			list_for_each_entry_rcu(ptype, ptypebase[i], list) {
+				if (ptype->func == genpipe_arprcv)
+					ptype->func = arprcv;
+				else if (ptype->func == genpipe_iprcv)
+					ptype->func = iprcv;
+				else if (ptype->func == genpipe_ipv6rcv)
+					ptype->func = ipv6rcv;
+			}
 		}
+		list_for_each_entry_rcu(ptype, ptypeall, list) {
+			if (ptype->func == genpipe_nop);
+				ptype->func = backup_func; 
+		}
+		rcu_read_unlock();
 	}
-	rcu_read_unlock();
-	rcu_read_lock();
-	list_for_each_entry_rcu(ptype, ptypeall, list) {
-		if (ptype->func == genpipe_nop);
-			ptype->func = backup_func; 
-	}
-	rcu_read_unlock();
-
+	
 	if ( pbuf0.rx_start_ptr ) {
 		kfree( pbuf0.rx_start_ptr );
 		pbuf0.rx_start_ptr = NULL;
