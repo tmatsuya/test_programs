@@ -73,6 +73,7 @@ int (*backup_func)(struct sk_buff *, struct net_device *, struct packet_type *, 
 
 static unsigned int hook_dev_add_pack = 0;
 static char *interface = IF_NAME;
+static struct sk_buff *genpipe_skb = 0;
 
 module_param(interface , charp , S_IRUGO);
 module_param(hook_dev_add_pack, uint, 0644);
@@ -167,7 +168,7 @@ int get_table_entry(void)
 	int pos, size, i;
 	char buf[128], *ptr;
 
-	netifrx = napigroreceive = netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
+	netdevallocskb = netifrx = napigroreceive = netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
 	for (i=0;i<PTYPE_HASH_SIZE;++i)
 		ptypebase[i] = 0LL;
 
@@ -232,10 +233,13 @@ int get_table_entry(void)
 	return -1;	
 }
 
-struct sk_buff *genpipe___netdev_alloc_skb(struct net_device *dev,
+struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev,
                                    unsigned int length, gfp_t gfp_mask)
 {
-	return __netdev_alloc_skb(dev, length, gfp_mask);
+	if (unlikely(genpipe_skb == 0))
+		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
+
+	return genpipe_skb;
 }
 
 int genpipe_netif_rx(struct sk_buff *skb)
@@ -248,7 +252,9 @@ gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *
 {
 	++rx_count[smp_processor_id()];
 #if 1
-	kfree_skb(skb);
+	if (unlikely(skb != genpipe_skb))
+		kfree_skb(skb);
+
 	return NET_RX_SUCCESS;
 #else
 	return napi_gro_receive(napi, skb);
@@ -258,7 +264,14 @@ gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *
 int genpipe_netif_receive_skb(struct sk_buff *skb)
 {
 	++rx_count[smp_processor_id()];
+#if 1
+	if (unlikely(skb != genpipe_skb))
+		kfree_skb(skb);
+
+	return NET_RX_SUCCESS;
+#else
 	return netifreceiveskb(skb);
+#endif
 }
 
 int hook_ixgbe(void)
@@ -271,7 +284,10 @@ int hook_ixgbe(void)
 	if (netifreceiveskb == 0LL || ixgbecleanrxirq == 0LL)
 		return -1;
 
-	if (napigroreceive == 0LL || ixgbecleanrxirq == 0LL)
+	if (napigroreceive == 0LL || ixgbecleanrxirq == 0LL || netifrx == 0LL)
+		return -1;
+
+	if (netdevallocskb == 0LL)
 		return -1;
 
 	ptr = ixgbecleanrxirq;
@@ -300,6 +316,14 @@ int hook_ixgbe(void)
 				if ( (pte = get_pte((unsigned long long)ptr)) ) {
 					pte->pte |= (_PAGE_RW);
 					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_netif_rx - ((unsigned int)ptr + 5);
+					pte->pte &= ~(_PAGE_RW);
+				}
+			}
+			if (((unsigned int)ptr + 5 + dest) == (unsigned int)netdevallocskb) {
+				printk( "%p: callq __netdev_alloc_skb()\n", ptr);
+				if ( (pte = get_pte((unsigned long long)ptr)) ) {
+					pte->pte |= (_PAGE_RW);
+					*(unsigned int *)(ptr+1) = (unsigned int)genpipe__netdev_alloc_skb - ((unsigned int)ptr + 5);
 					pte->pte &= ~(_PAGE_RW);
 				}
 			}
