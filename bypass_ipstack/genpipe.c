@@ -73,7 +73,7 @@ int (*backup_func)(struct sk_buff *, struct net_device *, struct packet_type *, 
 
 static char *interface = IF_NAME;
 static unsigned int hook_dev_add_pack = 0;
-static unsigned int hook_driver = 0;
+static unsigned int hook_driver = 1;
 
 static struct sk_buff *genpipe_skb = 0;
 static int genpipe_skb_count = 0;
@@ -593,9 +593,9 @@ genpipe_write_exit:
 static int genpipe_release(struct inode *inode, struct file *filp)
 {
 	printk("%s\n", __func__);
-	rtnl_lock();
-	dev_set_promiscuity(device, -1);
-	rtnl_unlock();
+//	rtnl_lock();
+//	dev_set_promiscuity(device, -1);
+//	rtnl_unlock();
 
 	return 0;
 }
