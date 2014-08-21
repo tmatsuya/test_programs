@@ -280,7 +280,7 @@ printk("genpipe_kfree_skb\n");
 
 void genpipe__dev_kfree_skb_any(struct sk_buff *skb, enum skb_free_reason reason)
 {
-#if 1
+#if 0
 	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
 #else
@@ -292,7 +292,7 @@ printk("genpipe_dev_kfree_skb_any\n");
 struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev, unsigned int length, gfp_t gfp_mask)
 {
 	++alloc_count[smp_processor_id()];
-#if 1
+#if 0
 	if (unlikely(genpipe_skb == 0)) {
 		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
 	}
@@ -313,6 +313,7 @@ loop=0;
 
 int genpipe_netif_rx(struct sk_buff *skb)
 {
+printk("genpipe_netif_rx\n");
 	++rx_count[smp_processor_id()];
 	return netif_rx(skb);
 }
@@ -323,7 +324,7 @@ static int loop = 0;
 int s,e;
 	++free_count[smp_processor_id()];
 	++rx_count[smp_processor_id()];
-#if 1
+#if 0
 	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
 #else
@@ -343,7 +344,8 @@ loop=0;
 int genpipe_netif_receive_skb(struct sk_buff *skb)
 {
 	++rx_count[smp_processor_id()];
-#if 1
+printk("genpipe_netif_receive_skb\n");
+#if 0
 	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
 
