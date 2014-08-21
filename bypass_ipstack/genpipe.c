@@ -61,6 +61,8 @@
 struct list_head *ptypeall   = 0LL;
 struct list_head *ptypebase[PTYPE_HASH_SIZE];
 
+void (*kfreeskb)(struct sk_buff *);
+void (*devkfreeskbany)(struct sk_buff *, enum skb_free_reason);
 struct sk_buff *(*netdevallocskb)(struct net_device *, unsigned int, gfp_t);
 int (*netifrx)(struct sk_buff *);
 gro_result_t (*napigroreceive)(struct napi_struct *, struct sk_buff *);
@@ -103,6 +105,13 @@ printk( "end=%x\n", (unsigned int)X->end);
 #define	__devexit_p
 #endif
 
+static __inline unsigned long long int rdtsc(void)
+{
+	unsigned a, d;
+	__asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
+	return ((unsigned long long)a) | (((unsigned long long)d) << 32);;
+}
+
 static spinlock_t rx_lock;
 static wait_queue_head_t write_q;
 static wait_queue_head_t read_q;
@@ -119,7 +128,7 @@ struct _pbuf_dma {
 	unsigned char   *tx_read_ptr;		/* tx read ptr */
 } static pbuf0={0,0,0,0,0,0,0,0};
 
-unsigned long rx_count[NR_CPUS];
+unsigned long rx_count[NR_CPUS], alloc_count[NR_CPUS], free_count[NR_CPUS];
 struct net_device* device = NULL; 
 
 int genpipe_pack_rcv(struct sk_buff *, struct net_device *, struct packet_type *, struct net_device *);
@@ -173,7 +182,7 @@ int get_table_entry(void)
 	int pos, size, i;
 	char buf[128], *ptr;
 
-	netdevallocskb = netifrx = napigroreceive = netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
+	kfreeskb = devkfreeskbany = netdevallocskb = netifrx = napigroreceive = netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
 	for (i=0;i<PTYPE_HASH_SIZE;++i)
 		ptypebase[i] = 0LL;
 
@@ -183,6 +192,12 @@ int get_table_entry(void)
 		pos=0;
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
+			ptr = strnstr(buf, " kfree_skb\n", sizeof(buf));
+			if (ptr && !kfreeskb)
+				sscanf(ptr-19, "%llx", &kfreeskb);
+			ptr = strnstr(buf, " __dev_kfree_skb_any\n", sizeof(buf));
+			if (ptr && !devkfreeskbany)
+				sscanf(ptr-19, "%llx", &devkfreeskbany);
 			ptr = strnstr(buf, " __netdev_alloc_skb\n", sizeof(buf));
 			if (ptr && !netdevallocskb)
 				sscanf(ptr-19, "%llx", &netdevallocskb);
@@ -217,9 +232,11 @@ int get_table_entry(void)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (netdevallocskb != 0LL && netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
+			if (kfreeskb != 0LL && devkfreeskbany != 0LL && netdevallocskb != 0LL && netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
+		printk("kfree_skb=%p\n", kfreeskb);
+		printk("__dev_kfree_skb_any=%p\n", devkfreeskbany);
 		printk("__netdevallocskb=%p\n", netdevallocskb);
 		printk("netifrx=%p\n", netifrx);
 		printk("napigroreceive=%p\n", napigroreceive);
@@ -238,12 +255,29 @@ int get_table_entry(void)
 	return -1;	
 }
 
-struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev,
-                                   unsigned int length, gfp_t gfp_mask)
+void genpipe_kfree_skb(struct sk_buff *skb)
+{
+	return kfree_skb(skb);
+}
+
+void genpipe__dev_kfree_skb_any(struct sk_buff *skb, enum skb_free_reason reason)
+{
+	return __dev_kfree_skb_any(skb, reason);
+}
+
+struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev, unsigned int length, gfp_t gfp_mask)
 {
 //	if (unlikely(genpipe_skb == 0 || genpipe_skb_count == 1)) {
+static int loop = 0;
+int s,e;
+	++alloc_count[smp_processor_id()];
+s = rdtsc();
 		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
-//	}
+e = rdtsc();
+if (++loop == 10000000) {
+printk("__netdev_alloc_skb() cpu cycles=%d\n", e-s);
+loop=0;
+}
 //	genpipe_skb_count = 1;
 
 	return genpipe_skb;
@@ -257,10 +291,19 @@ int genpipe_netif_rx(struct sk_buff *skb)
 
 gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
+static int loop = 0;
+int s,e;
+	++free_count[smp_processor_id()];
 	++rx_count[smp_processor_id()];
 #if 1
 //	if (unlikely(skb != genpipe_skb))
+s = rdtsc();
 		kfree_skb(skb);
+e = rdtsc();
+if (++loop == 10000000) {
+printk("kfree_skb() cpu cycles=%d\n", e-s);
+loop=0;
+}
 
 //	genpipe_skb_count = 0;
 
@@ -447,23 +490,26 @@ static int genpipe_open(struct inode *inode, struct file *filp)
 static ssize_t genpipe_read(struct file *filp, char __user *buf,
 			   size_t count, loff_t *ppos)
 {
-	char tmp[16];
-	int copy_len, available_read_len, i, rxcounts;
+	char tmp[40];
+	int copy_len, available_read_len, i, rxcounts, alloccounts, freecounts;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
-	rxcounts=0;
-	for (i=0;i<NR_CPUS;++i)
+	rxcounts = alloccounts = freecounts = 0;
+	for (i=0;i<NR_CPUS;++i) {
 		rxcounts += rx_count[i];
+		alloccounts += alloc_count[i];
+		freecounts += free_count[i];
+	}
 
-	sprintf( tmp, "%11lu\r\n", rxcounts);
-	if ( copy_to_user( buf, tmp, 13 ) ) {
+	sprintf( tmp, "%11lu,%11lu,%11lu\r\n", rxcounts, alloccounts, freecounts);
+	if ( copy_to_user( buf, tmp, 37 ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
 	}
 
-	return 13;
+	return 37;
 }
 
 static ssize_t genpipe_write(struct file *filp, const char __user *buf,
@@ -746,8 +792,11 @@ static int __init genpipe_init(void)
 	genpipe_pack.dev = device;
 //	dev_add_pack(&genpipe_pack);
 
-	for (i=0; i<NR_CPUS;++i)
+	for (i=0; i<NR_CPUS;++i) {
 		rx_count[i] = 0;
+		alloc_count[i] = 0;
+		free_count[i] = 0;
+	}
 
 	return 0;
 
