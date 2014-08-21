@@ -379,10 +379,28 @@ int hook_ixgbe(int level)
 					pte->pte &= ~(_PAGE_RW);
 				}
 			}
+			if (((unsigned int)ptr + 5 + dest) == (unsigned int)kfreeskb) {
+				printk( "%p: callq kfree_skb)\n", ptr);
+				if ( (pte = get_pte((unsigned long long)ptr)) ) {
+					pte->pte |= (_PAGE_RW);
+					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_kfree_skb - ((unsigned int)ptr + 5);
+					pte->pte &= ~(_PAGE_RW);
+				}
+			}
+			if (((unsigned int)ptr + 5 + dest) == (unsigned int)devkfreeskbany) {
+				printk( "%p: callq __dev_kfree_skb_any\n", ptr);
+				if ( (pte = get_pte((unsigned long long)ptr)) ) {
+					pte->pte |= (_PAGE_RW);
+					*(unsigned int *)(ptr+1) = (unsigned int)genpipe__dev_kfree_skb_any - ((unsigned int)ptr + 5);
+					pte->pte &= ~(_PAGE_RW);
+				}
+			}
 		}
 	}
 
 	return 0;
+		printk("kfree_skb=%p\n", kfreeskb);
+		printk("__dev_kfree_skb_any=%p\n", devkfreeskbany);
 }
 
 int genpipe_arprcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *dev2)
