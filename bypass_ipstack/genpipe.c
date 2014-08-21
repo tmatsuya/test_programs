@@ -196,14 +196,17 @@ int get_table_entry(void)
 			pos += size;
 			ptr = strnstr(buf, "[ixgbe]\n", sizeof(buf));
 			if (ptr) {
-				while (*ptr != '\n')
+				while (*ptr != '\n' && ptr > buf) {
 					--ptr;
-				sscanf(ptr+1, "%llx", &adr);
-				if (adr < driver_top || !driver_top) {
-					driver_top = adr;
 				}
-				if (adr > driver_bottom || !driver_bottom)
-					driver_bottom = adr;
+				if (ptr != buf) {
+					sscanf(ptr+1, "%llx", &adr);
+					if (adr < driver_top || !driver_top) {
+						driver_top = adr;
+					}
+                                        if (adr > driver_bottom || !driver_bottom)
+						driver_bottom = adr;
+                                }
 			}
 			ptr = strnstr(buf, " kfree_skb\n", sizeof(buf));
 			if (ptr && !kfreeskb)
@@ -271,20 +274,31 @@ int get_table_entry(void)
 
 void genpipe_kfree_skb(struct sk_buff *skb)
 {
+printk("genpipe_kfree_skb\n");
 	return kfree_skb(skb);
 }
 
 void genpipe__dev_kfree_skb_any(struct sk_buff *skb, enum skb_free_reason reason)
 {
+#if 1
+	if (unlikely(skb != genpipe_skb))
+		kfree_skb(skb);
+#else
+printk("genpipe_dev_kfree_skb_any\n");
 	return __dev_kfree_skb_any(skb, reason);
+#endif
 }
 
 struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev, unsigned int length, gfp_t gfp_mask)
 {
-//	if (unlikely(genpipe_skb == 0 || genpipe_skb_count == 1)) {
+	++alloc_count[smp_processor_id()];
+#if 1
+	if (unlikely(genpipe_skb == 0)) {
+		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
+	}
+#else
 static int loop = 0;
 int s,e;
-	++alloc_count[smp_processor_id()];
 s = rdtsc();
 		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
 e = rdtsc();
@@ -292,7 +306,7 @@ if (++loop == 10000000) {
 printk("__netdev_alloc_skb() cpu cycles=%d\n", e-s);
 loop=0;
 }
-//	genpipe_skb_count = 1;
+#endif
 
 	return genpipe_skb;
 }
@@ -310,7 +324,9 @@ int s,e;
 	++free_count[smp_processor_id()];
 	++rx_count[smp_processor_id()];
 #if 1
-//	if (unlikely(skb != genpipe_skb))
+	if (unlikely(skb != genpipe_skb))
+		kfree_skb(skb);
+#else
 s = rdtsc();
 		kfree_skb(skb);
 e = rdtsc();
@@ -318,19 +334,16 @@ if (++loop == 10000000) {
 printk("kfree_skb() cpu cycles=%d\n", e-s);
 loop=0;
 }
-
-//	genpipe_skb_count = 0;
+#endif
 
 	return NET_RX_SUCCESS;
-#else
-	return napi_gro_receive(napi, skb);
-#endif
+//	return napi_gro_receive(napi, skb);
 }
 
 int genpipe_netif_receive_skb(struct sk_buff *skb)
 {
 	++rx_count[smp_processor_id()];
-#if 0
+#if 1
 	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
 
