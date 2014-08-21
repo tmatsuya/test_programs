@@ -60,6 +60,7 @@
 //struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head *ptypeall   = 0LL;
 struct list_head *ptypebase[PTYPE_HASH_SIZE];
+unsigned long long driver_top = 0LL, driver_bottom = 0LL;
 
 void (*kfreeskb)(struct sk_buff *);
 void (*devkfreeskbany)(struct sk_buff *, enum skb_free_reason);
@@ -181,6 +182,7 @@ int get_table_entry(void)
 	struct file *fp;
 	int pos, size, i;
 	char buf[128], *ptr;
+	unsigned long long adr;
 
 	kfreeskb = devkfreeskbany = netdevallocskb = netifrx = napigroreceive = netifreceiveskb = ixgbecleanrxirq = arprcv = iprcv = ipv6rcv = ptypeall = 0LL;
 	for (i=0;i<PTYPE_HASH_SIZE;++i)
@@ -192,6 +194,17 @@ int get_table_entry(void)
 		pos=0;
 		while ( (size = file_read(fp, pos, buf+(sizeof(buf)/2), sizeof(buf)/2)) > 0) {
 			pos += size;
+			ptr = strnstr(buf, "[ixgbe]\n", sizeof(buf));
+			if (ptr) {
+				while (*ptr != '\n')
+					--ptr;
+				sscanf(ptr+1, "%llx", &adr);
+				if (adr < driver_top || !driver_top) {
+					driver_top = adr;
+				}
+				if (adr > driver_bottom || !driver_bottom)
+					driver_bottom = adr;
+			}
 			ptr = strnstr(buf, " kfree_skb\n", sizeof(buf));
 			if (ptr && !kfreeskb)
 				sscanf(ptr-19, "%llx", &kfreeskb);
@@ -235,6 +248,7 @@ int get_table_entry(void)
 			if (kfreeskb != 0LL && devkfreeskbany != 0LL && netdevallocskb != 0LL && netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
 				break;
 		}
+		printk("driver=%16llx - %16llx\n", driver_top, driver_bottom);
 		printk("kfree_skb=%p\n", kfreeskb);
 		printk("__dev_kfree_skb_any=%p\n", devkfreeskbany);
 		printk("__netdevallocskb=%p\n", netdevallocskb);
@@ -342,8 +356,7 @@ int hook_ixgbe(int level)
 	if (netdevallocskb == 0LL)
 		return -1;
 
-	ptr = ixgbecleanrxirq;
-	for (i=0; i<0x10000; ++ptr, ++i) {
+	for (ptr = (unsigned char *)driver_top; ptr < (unsigned char *)driver_bottom; ++ptr) {
 		// check callq (0xe8 + 4byte)
 		if (*ptr == 0xe8) {
 			dest = *(unsigned int *)(ptr+1);
@@ -380,7 +393,7 @@ int hook_ixgbe(int level)
 				}
 			}
 			if (((unsigned int)ptr + 5 + dest) == (unsigned int)kfreeskb) {
-				printk( "%p: callq kfree_skb)\n", ptr);
+				printk( "%p: callq kfree_skb()\n", ptr);
 				if ( (pte = get_pte((unsigned long long)ptr)) ) {
 					pte->pte |= (_PAGE_RW);
 					*(unsigned int *)(ptr+1) = (unsigned int)genpipe_kfree_skb - ((unsigned int)ptr + 5);
