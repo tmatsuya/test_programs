@@ -297,13 +297,13 @@ struct sk_buff *genpipe__netdev_alloc_skb(struct net_device *dev, unsigned int l
 #else
 static int loop = 0;
 int s,e;
-s = rdtsc();
+//s = rdtsc();
 		genpipe_skb = __netdev_alloc_skb(dev, length, gfp_mask);
-e = rdtsc();
-if (++loop == 10000000) {
-printk("__netdev_alloc_skb() cpu cycles=%d\n", e-s);
-loop=0;
-}
+//e = rdtsc();
+//if (++loop == 10000000) {
+//printk("__netdev_alloc_skb() cpu cycles=%d\n", e-s);
+//loop=0;
+//}
 #endif
 
 	return genpipe_skb;
@@ -318,21 +318,21 @@ printk("genpipe_netif_rx\n");
 
 gro_result_t genpipe_napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
-static int loop = 0;
-int s,e;
+//static int loop = 0;
+//int s,e;
 	++free_count[smp_processor_id()];
 	++rx_count[smp_processor_id()];
 #if 0
 	if (unlikely(skb != genpipe_skb))
 		kfree_skb(skb);
 #else
-s = rdtsc();
+//s = rdtsc();
 		kfree_skb(skb);
-e = rdtsc();
-if (++loop == 10000000) {
-printk("kfree_skb() cpu cycles=%d\n", e-s);
-loop=0;
-}
+//e = rdtsc();
+//if (++loop == 10000000) {
+//printk("kfree_skb() cpu cycles=%d\n", e-s);
+//loop=0;
+//}
 #endif
 
 	return NET_RX_SUCCESS;
@@ -397,7 +397,7 @@ int hook_ixgbe(int level)
 					pte->pte &= ~(_PAGE_RW);
 				}
 			}
-			if (((unsigned int)ptr + 5 + dest) == (unsigned int)netdevallocskb) {
+			if (level > 1 && ((unsigned int)ptr + 5 + dest) == (unsigned int)netdevallocskb) {
 				printk( "%p: callq __netdev_alloc_skb()\n", ptr);
 				if ( (pte = get_pte((unsigned long long)ptr)) ) {
 					pte->pte |= (_PAGE_RW);
@@ -405,7 +405,7 @@ int hook_ixgbe(int level)
 					pte->pte &= ~(_PAGE_RW);
 				}
 			}
-			if (((unsigned int)ptr + 5 + dest) == (unsigned int)kfreeskb) {
+			if (level >> 1 && ((unsigned int)ptr + 5 + dest) == (unsigned int)kfreeskb) {
 				printk( "%p: callq kfree_skb()\n", ptr);
 				if ( (pte = get_pte((unsigned long long)ptr)) ) {
 					pte->pte |= (_PAGE_RW);
@@ -413,7 +413,7 @@ int hook_ixgbe(int level)
 					pte->pte &= ~(_PAGE_RW);
 				}
 			}
-			if (((unsigned int)ptr + 5 + dest) == (unsigned int)devkfreeskbany) {
+			if (level >> 1 && ((unsigned int)ptr + 5 + dest) == (unsigned int)devkfreeskbany) {
 				printk( "%p: callq __dev_kfree_skb_any\n", ptr);
 				if ( (pte = get_pte((unsigned long long)ptr)) ) {
 					pte->pte |= (_PAGE_RW);
