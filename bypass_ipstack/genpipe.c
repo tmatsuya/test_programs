@@ -248,8 +248,6 @@ int get_table_entry(void)
 					ptypebase[i] = (unsigned long long)ptypebase[0] + i*0x10;
 			}
 			memcpy(&buf[0], &buf[sizeof(buf)/2], sizeof(buf)/2);
-			if (kfreeskb != 0LL && devkfreeskbany != 0LL && netdevallocskb != 0LL && netifrx != 0LL &&  napigroreceive != 0LL &&netifreceiveskb != 0LL && ixgbecleanrxirq != 0LL &&  arprcv != 0LL && iprcv != 0LL && ipv6rcv != 0LL && ptypeall != 0LL && ptypebase[0] != 0LL)
-				break;
 		}
 		printk("driver=%16llx - %16llx\n", driver_top, driver_bottom);
 		printk("kfree_skb=%p\n", kfreeskb);
