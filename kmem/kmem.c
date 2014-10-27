@@ -14,6 +14,8 @@
 #include <linux/errno.h>
 #include <linux/init.h>
 
+#include "get_pte.c"
+
 //#define	DEBUG
 
 #ifndef	DRV_NAME
@@ -121,7 +123,17 @@ static int kmem_release(struct inode *inode, struct file *filp)
 static long kmem_ioctl(struct file *filp,
 			unsigned int cmd, unsigned long arg)
 {
+	unsigned long long *ptr, ret;
 	printk("%s\n", __func__);
+	if (cmd == 1) {
+		ptr = (unsigned long long *)arg;
+printk( "VA=%p\n", *ptr);
+		ret = get_pte(*ptr);
+printk( "PA=%p\n", ret);
+		*ptr = ret;
+		return 0;
+	}
+
 	return  -ENOTTY;
 }
 
