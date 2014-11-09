@@ -20,5 +20,9 @@ install:
 autoload:
 	if [ -d /etc/modules-load.d -a ! -f /etc/modules-load.d/kmem.conf ] ; then \
 		install -m 644 kmem.conf /etc/modules-load.d ; \
+	else \
+		if [ -d /etc/sysconfig/modules -a ! -f /etc/sysconfig/modules/kmem.modules ] ; then \
+			install -m 644 kmem.modules /etc/sysconfig/modules ; \
+		fi \
 	fi
 endif
