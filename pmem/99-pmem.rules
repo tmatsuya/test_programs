@@ -1,0 +1,1 @@
+KERNEL=="pmem*"		MODE="0666"
