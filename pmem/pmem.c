@@ -34,6 +34,7 @@
 #endif
 
 static unsigned long long pmem_position = 0LL;
+unsigned char paged_buf[4096]__attribute__((aligned(4096)));
 
 static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)
 {
@@ -75,15 +76,29 @@ static ssize_t pmem_read(struct file *filp, char __user *buf,
 			   size_t count, loff_t *ppos)
 {
 	int copy_len;
+	pte_t *pte = 0;
+	unsigned long pte_save;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
-	copy_len = count;
+//	copy_len = count;
+	copy_len = 1;
 
-	if ( copy_to_user( buf, (unsigned char *)pmem_position, copy_len ) ) {
+	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
+		pte_save = pte->pte;
+		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
+//		pte->pte |= (_PAGE_RW);
+//		pte->pte &= ~(_PAGE_RW);
+	}
+
+	if ( copy_to_user( buf, (unsigned char *)paged_buf+(pmem_position & 0xfff), copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
+	}
+
+	if (pte) {
+		pte->pte = pte_save;
 	}
 
 	pmem_position += copy_len;
@@ -96,15 +111,28 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 
 {
 	int copy_len;
+	pte_t *pte = 0;
+	unsigned long pte_save;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
-	copy_len = count;
+//	copy_len = count;
+	copy_len = 1;
 
-	if ( copy_from_user( (unsigned char *)pmem_position, buf, copy_len ) ) {
+	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
+		pte_save = pte->pte;
+		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
+		pte->pte |= (_PAGE_RW);
+	}
+
+	if ( copy_from_user( (unsigned char *)paged_buf+(pmem_position & 0xfff), buf, copy_len ) ) {
 		printk( KERN_INFO "copy_from_user failed\n" );
 		return -EFAULT;
+	}
+
+	if (pte) {
+		pte->pte = pte_save;
 	}
 
 	pmem_position += copy_len;
