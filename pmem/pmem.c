@@ -75,21 +75,22 @@ static int pmem_open(struct inode *inode, struct file *filp)
 static ssize_t pmem_read(struct file *filp, char __user *buf,
 			   size_t count, loff_t *ppos)
 {
-	int copy_len;
+	unsigned long copy_len, left_len;
 	pte_t *pte = 0;
 	unsigned long pte_save;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
-//	copy_len = count;
-	copy_len = 1;
+	left_len = 0x1000 - (pmem_position & 0xfff);
+	if (count <= left_len)
+		copy_len = count;
+	else
+		copy_len = left_len;
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
 		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
-//		pte->pte |= (_PAGE_RW);
-//		pte->pte &= ~(_PAGE_RW);
 	}
 
 	if ( copy_to_user( buf, (unsigned char *)paged_buf+(pmem_position & 0xfff), copy_len ) ) {
@@ -110,15 +111,19 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 			    size_t count, loff_t *ppos)
 
 {
-	int copy_len;
+	unsigned long copy_len, left_len;
 	pte_t *pte = 0;
 	unsigned long pte_save;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
-//	copy_len = count;
-	copy_len = 1;
+	left_len = 0x1000 - (pmem_position & 0xfff);
+	if (count <= left_len)
+		copy_len = count;
+	else
+		copy_len = left_len;
+
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
