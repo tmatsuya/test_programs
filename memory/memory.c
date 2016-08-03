@@ -15,7 +15,7 @@
 #ifdef __APPLE__
 #define	MEM_DEVICE	"/dev/kmem"
 #else
-#define	MEM_DEVICE	"/dev/mem"
+#define	MEM_DEVICE	"/dev/pmem"
 #endif
 
 WINDOW *win;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 		printf("usage:\t%s [file] memory_address\n", argv[0]);
 		printf("\tmemory 0xb80000\n");
 		printf("\tmemory /dev/kmem 0xb80000\n");
-		printf("file: default /dev/mem0\n");
+		printf("file: default %s\n", MEM_DEVICE);
 		exit(0);
 	}
 
