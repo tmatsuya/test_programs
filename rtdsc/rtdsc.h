@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
@@ -34,17 +35,20 @@ static __inline long long int rdtsc() {
 
 static __inline unsigned long long get_cpu_cycle_per_sec()
 {
-	unsigned long long startusec;
+	unsigned long long startnsec;
 	unsigned long long start, now, diff;
-	struct timeval tv;
+	struct timespec ts;
 
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+	startnsec = ts.tv_nsec;
 	start = rdtsc();
-	gettimeofday(&tv, NULL);
-	startusec = tv.tv_sec * 1000000 + tv.tv_usec;
 
 	do {
-		gettimeofday(&tv, NULL);
-	} while ((tv.tv_sec * 1000000 + tv.tv_usec) < (startusec + 100000));
+		clock_gettime(CLOCK_REALTIME, &ts);
+		if (startnsec > ts.tv_nsec)
+			ts.tv_nsec += 1000000000;
+	} while (ts.tv_nsec < (startnsec + 100000000));
 	
 	now = rdtsc();
 	diff = now - start;
