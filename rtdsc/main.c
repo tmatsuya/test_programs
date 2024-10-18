@@ -7,7 +7,7 @@ TimeWatcher tw;
 
 int main()
 {
-	get_cpu_cycle_per_sec();
+	get_rtdsc_cycle_per_sec();
 
 	start(&tw);
 	end(&tw);
