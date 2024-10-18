@@ -10,14 +10,27 @@ typedef struct TimeWatcher
 	unsigned long long end;
 } TimeWatcher;
 
+
+#ifdef __x86_64__
 static __inline unsigned long long int rdtsc(void)
 {
-  unsigned a, d;
+	unsigned a, d;
 
-  __asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
+	__asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
 
-  return ((unsigned long long)a) | (((unsigned long long)d) << 32);;
+	return ((unsigned long long)a) | (((unsigned long long)d) << 32);;
 }
+#endif
+
+#ifdef __aarch64__
+static __inline long long int rdtsc() {
+	long long int cntvct;
+
+	asm volatile ("mrs %0, cntvct_el0; " : "=r"(cntvct) :: "memory");
+
+	return cntvct;
+}
+#endif
 
 static __inline unsigned long long get_cpu_cycle_per_sec()
 {
@@ -31,12 +44,12 @@ static __inline unsigned long long get_cpu_cycle_per_sec()
 
 	do {
 		gettimeofday(&tv, NULL);
-	} while ((tv.tv_sec * 1000000 + tv.tv_usec) < (startusec + 1000000));
+	} while ((tv.tv_sec * 1000000 + tv.tv_usec) < (startusec + 100000));
 	
 	now = rdtsc();
 	diff = now - start;
 
-	cpu_cycles_per_sec = diff;
+	cpu_cycles_per_sec = diff * 10;
 	return diff;
 }
 
