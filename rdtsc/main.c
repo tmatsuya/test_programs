@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include "rtdsc.h"
+#include "rdtsc.h"
 
 TimeWatcher tw;
 
 int main()
 {
-	get_rtdsc_cycle_per_sec();
+	get_rdtsc_cycle_per_sec();
 
 	start(&tw);
 	end(&tw);

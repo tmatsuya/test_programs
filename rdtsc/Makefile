@@ -6,13 +6,13 @@ CC = gcc
 INCLUDE =
 LIBS =
 
-all: rtdsc
+all: rdtsc
 
-rtdsc: ${OBJ}
+rdtsc: ${OBJ}
 	${CC} ${CFLAGS} ${INCLUDES} -o $@ ${OBJ} ${LIBS}
 
 clean:
-	-rm -f *.o core *.core rtdsc
+	-rm -f *.o core *.core rdtsc
 
 .c.o:
 	${CC} ${CFLAGS} ${INCLUDES} -c $<

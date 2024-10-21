@@ -3,7 +3,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-unsigned long long rtdsc_cycles_per_sec;
+unsigned long long rdtsc_cycles_per_sec;
 
 typedef struct TimeWatcher
 {
@@ -33,7 +33,7 @@ static __inline long long int rdtsc() {
 }
 #endif
 
-static __inline unsigned long long get_rtdsc_cycle_per_sec()
+static __inline unsigned long long get_rdtsc_cycle_per_sec()
 {
 	unsigned long long startnsec;
 	unsigned long long start, now, diff;
@@ -53,8 +53,8 @@ static __inline unsigned long long get_rtdsc_cycle_per_sec()
 	now = rdtsc();
 	diff = now - start;
 
-	rtdsc_cycles_per_sec = diff * 10;
-	return rtdsc_cycles_per_sec = diff * 10;
+	rdtsc_cycles_per_sec = diff * 10;
+	return rdtsc_cycles_per_sec = diff * 10;
 }
 
 static __inline void start(TimeWatcher* tw)
@@ -69,6 +69,6 @@ static __inline void end(TimeWatcher* tw)
 
 void print_time_sec(TimeWatcher* tw)
 {
-	printf("CPU Frequency:%lldMHz (%lld cycles/sec)\n", rtdsc_cycles_per_sec / 1000000, rtdsc_cycles_per_sec);
-	printf("time:%llu ns, CPU cycles:%llu\n", (tw->end - tw->start) * 1000000000 / rtdsc_cycles_per_sec, tw->end - tw->start);
+	printf("CPU Frequency:%lldMHz (%lld cycles/sec)\n", rdtsc_cycles_per_sec / 1000000, rdtsc_cycles_per_sec);
+	printf("time:%llu ns, CPU cycles:%llu\n", (tw->end - tw->start) * 1000000000 / rdtsc_cycles_per_sec, tw->end - tw->start);
 }
