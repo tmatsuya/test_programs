@@ -15,7 +15,7 @@
 #ifdef __APPLE__
 #define	MEM_DEVICE	"/dev/kmem"
 #else
-#define	MEM_DEVICE	"/dev/pmem"
+#define	MEM_DEVICE	"/dev/mem"
 #endif
 
 WINDOW *win;
