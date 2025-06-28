@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.0.0"
+#define	DRV_VERSION	"0.1.0"
 #define	pmem_DRIVER_NAME	DRV_NAME " pmem driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -33,7 +33,7 @@
 #define	__devexit_p
 #endif
 
-static unsigned long long pmem_position = 0LL;
+//static unsigned long long pmem_position = 0LL;
 unsigned char paged_buf[4096]__attribute__((aligned(4096)));
 
 static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)
@@ -67,7 +67,7 @@ static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)
 static int pmem_open(struct inode *inode, struct file *filp)
 {
 	printk("%s\n", __func__);
-	pmem_position = 0LL;
+//	pmem_position = 0LL;
 
 	return 0;
 }
@@ -82,17 +82,17 @@ static ssize_t pmem_read(struct file *filp, char __user *buf,
 	printk("%s\n", __func__);
 #endif
 
-	left_len = 0x1000 - (pmem_position & 0xfff);
+	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
 	else
 		copy_len = left_len;
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
-		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
+		pte->pte = (filp->f_pos & ~0xfff) | (pte_save & 0xfff);
 	}
 
-	if ( copy_to_user( buf, (unsigned char *)paged_buf+(pmem_position & 0xfff), copy_len ) ) {
+	if ( copy_to_user( buf, (unsigned char *)paged_buf+(filp->f_pos & 0xfff), copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
 	}
@@ -101,7 +101,7 @@ static ssize_t pmem_read(struct file *filp, char __user *buf,
 		pte->pte = pte_save;
 	}
 
-	pmem_position += copy_len;
+//	pmem_position += copy_len;
 
 	return copy_len;
 }
@@ -117,7 +117,7 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 	printk("%s\n", __func__);
 #endif
 
-	left_len = 0x1000 - (pmem_position & 0xfff);
+	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
 	else
@@ -126,11 +126,11 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
-		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
+		pte->pte = (filp->f_pos & ~0xfff) | (pte_save & 0xfff);
 		pte->pte |= (_PAGE_RW);
 	}
 
-	if ( copy_from_user( (unsigned char *)paged_buf+(pmem_position & 0xfff), buf, copy_len ) ) {
+	if ( copy_from_user( (unsigned char *)paged_buf+(filp->f_pos & 0xfff), buf, copy_len ) ) {
 		printk( KERN_INFO "copy_from_user failed\n" );
 		return -EFAULT;
 	}
@@ -139,7 +139,7 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 		pte->pte = pte_save;
 	}
 
-	pmem_position += copy_len;
+//	pmem_position += copy_len;
 
 	return copy_len;
 }
@@ -172,13 +172,13 @@ printk( "PA=%llx\n", ret);
 static loff_t pmem_llseek(struct file *flip, loff_t offset, int whence)
 {
 	if (whence == SEEK_SET)
-		pmem_position = offset;
+		flip->f_pos = offset;
 	else if (whence == SEEK_CUR)
-		pmem_position += offset;
+		flip->f_pos += offset;
 	else if (whence == SEEK_END)
-		pmem_position = ~0LL + offset;
+		flip->f_pos = ~0LL + offset;
 
-	return pmem_position;
+	return flip->f_pos;
 }
 
 
