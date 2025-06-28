@@ -236,3 +236,7 @@ static void __exit pmem_cleanup(void)
 MODULE_LICENSE("GPL");
 module_init(pmem_init);
 module_exit(pmem_cleanup);
+
+MODULE_DESCRIPTION("Physical Memory Access driver");
+MODULE_AUTHOR("<macchan@sfc.wide.ad.jp>");
+MODULE_LICENSE("GPL");
