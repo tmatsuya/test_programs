@@ -87,11 +87,12 @@ static ssize_t pmem_read(struct file *filp, char __user *buf,
 		copy_len = count;
 	else
 		copy_len = left_len;
-
+#if 0
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
 		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
 	}
+#endif
 
 	if ( copy_to_user( buf, (unsigned char *)paged_buf+(pmem_position & 0xfff), copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
@@ -125,11 +126,13 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 		copy_len = left_len;
 
 
+#if 0
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
 		pte->pte = (pmem_position & ~0xfff) | (pte_save & 0xfff);
 		pte->pte |= (_PAGE_RW);
 	}
+#endif
 
 	if ( copy_from_user( (unsigned char *)paged_buf+(pmem_position & 0xfff), buf, copy_len ) ) {
 		printk( KERN_INFO "copy_from_user failed\n" );
@@ -160,9 +163,9 @@ static long pmem_ioctl(struct file *filp,
 	printk("%s\n", __func__);
 	if (cmd == 1) {
 		ptr = (unsigned long long *)arg;
-printk( "VA=%p\n", *ptr);
-		ret = get_pte(*ptr);
-printk( "PA=%p\n", ret);
+printk( "VA=%llx\n", *ptr);
+		ret = (unsigned long long)get_pte(*ptr);
+printk( "PA=%llx\n", ret);
 		*ptr = ret;
 		return 0;
 	}
