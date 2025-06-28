@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.1.0"
+#define	DRV_VERSION	"0.1.1"
 #define	kmem_DRIVER_NAME	DRV_NAME " kmem driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -81,28 +81,27 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
+printk("%s\n", __func__);
 
 	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
 	else
 		copy_len = left_len;
-	if ( (pte = get_pte((unsigned long long)filp->f_pos)) ) {
-		pte_save = pte->pte;
-		pte->pte = (filp->f_pos & ~0xfffLL) | (pte_save & 0xfff);
-		pte->pte |= (_PAGE_USER | _PAGE_RW);
-	}
+//	if ( (pte = get_pte((unsigned long long)filp->f_pos)) ) {
+//		pte_save = pte->pte;
+//		pte->pte = (filp->f_pos & ~0xfffLL) | (pte_save & 0xfff);
+//	}
+printk( "read:%llX\n", (unsigned char *)filp->f_pos );
 
 	if ( copy_to_user( buf, (unsigned char *)filp->f_pos, copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
 	}
 
-	if (pte) {
-		pte->pte = pte_save;
-	}
-
-//	kmem_position += copy_len;
+//	if (pte) {
+//		pte->pte = pte_save;
+//	}
 
 	return copy_len;
 }
@@ -125,13 +124,13 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 		copy_len = left_len;
 
 
-	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
+	if ( (pte = get_pte((unsigned long long)filp->f_pos)) ) {
 		pte_save = pte->pte;
 		pte->pte = (filp->f_pos & ~0xfff) | (pte_save & 0xfff);
 		pte->pte |= (_PAGE_RW);
 	}
 
-	if ( copy_from_user( (unsigned char *)paged_buf+(filp->f_pos & 0xfff), buf, copy_len ) ) {
+	if ( copy_from_user( (unsigned char *)filp->f_pos, buf, copy_len ) ) {
 		printk( KERN_INFO "copy_from_user failed\n" );
 		return -EFAULT;
 	}
@@ -140,7 +139,6 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 		pte->pte = pte_save;
 	}
 
-//	kmem_position += copy_len;
 
 	return copy_len;
 }
@@ -158,14 +156,6 @@ static long kmem_ioctl(struct file *filp,
 {
 	unsigned long long *ptr, ret;
 	printk("%s\n", __func__);
-	if (cmd == 1) {
-		ptr = (unsigned long long *)arg;
-printk( "VA=%llx\n", *ptr);
-		ret = (unsigned long long)get_pte(*ptr);
-printk( "PA=%llx\n", ret);
-		*ptr = ret;
-		return 0;
-	}
 
 	return  -ENOTTY;
 }
