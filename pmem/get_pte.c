@@ -26,7 +26,7 @@ pte_t *get_pte(unsigned long long vaddr)
 
 	/* to lock the page */
 	struct page *pg;
-//	unsigned long long paddr;
+	unsigned long long paddr;
 
 	if (!pgd_present(*pgd)) {
 		printk(KERN_ALERT "[nskk] Alert: pgd not present %lu\n", *pgd);
@@ -52,10 +52,8 @@ pte_t *get_pte(unsigned long long vaddr)
 	}
 
 	pg = pte_page(*pte);
-#if 0
-//	pte->pte |= _PAGE_RW; // | _PAGE_USER;
-//	paddr = pte_val(*pte);
-#endif
+	pte->pte |= _PAGE_RW; // | _PAGE_USER;
+	paddr = pte_val(*pte);
 
 out:
 	return pte;
