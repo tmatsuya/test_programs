@@ -52,8 +52,8 @@ pte_t *get_pte(unsigned long long vaddr)
 	}
 
 	pg = pte_page(*pte);
-	pte->pte |= _PAGE_RW; // | _PAGE_USER;
-	paddr = pte_val(*pte);
+//	pte->pte |= _PAGE_RW; // | _PAGE_USER;
+//	paddr = pte_val(*pte);
 
 out:
 	return pte;

@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.1.0"
+#define	DRV_VERSION	"0.1.1"
 #define	pmem_DRIVER_NAME	DRV_NAME " pmem driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)

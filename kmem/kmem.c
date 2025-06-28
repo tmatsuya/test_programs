@@ -87,12 +87,13 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 		copy_len = count;
 	else
 		copy_len = left_len;
-	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
+	if ( (pte = get_pte((unsigned long long)filp->f_pos)) ) {
 		pte_save = pte->pte;
-		pte->pte = (filp->f_pos & ~0xfff) | (pte_save & 0xfff);
+		pte->pte = (filp->f_pos & ~0xfffLL) | (pte_save & 0xfff);
+		pte->pte |= (_PAGE_USER | _PAGE_RW);
 	}
 
-	if ( copy_to_user( buf, (unsigned char *)paged_buf+(filp->f_pos & 0xfff), copy_len ) ) {
+	if ( copy_to_user( buf, (unsigned char *)filp->f_pos, copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
 	}
