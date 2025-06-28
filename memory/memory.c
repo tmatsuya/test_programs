@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
 	} else {
 		printf("usage:\t%s [file] memory_address\n", argv[0]);
 		printf("\tmemory 0xb80000\n");
+		printf("\tmemory /dev/pmem 0xb80000\n");
 		printf("\tmemory /dev/kmem 0xb80000\n");
 		printf("file: default %s\n", MEM_DEVICE);
 		exit(0);
