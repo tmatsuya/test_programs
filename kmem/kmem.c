@@ -83,7 +83,8 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 	printk("%s\n", __func__);
 #endif
 
-	addr = (filp->f_pos & 0xf000000000000LL) ? (filp->f_pos | 0xffff000000000000LL) : filp->f_pos;
+	addr = (filp->f_pos & 0x0f00000000000000LL) ? (filp->f_pos | 0xf000000000000000LL) : filp->f_pos;
+
 	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
@@ -122,7 +123,7 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 	printk("%s\n", __func__);
 #endif
 
-	addr = (filp->f_pos & 0xf000000000000LL) ? (filp->f_pos | 0xffff000000000000LL) : filp->f_pos;
+	addr = (filp->f_pos & 0x0f00000000000000LL) ? (filp->f_pos | 0xf000000000000000LL) : filp->f_pos;
 	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
