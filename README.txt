@@ -6,8 +6,7 @@ Copyright 2014-2025 Takeshi Matsuya
 *CAUTION: These tools can cause your system to fail if used incorrectly.
 
  <kmem>
-   description:
-     Kernel Memory Access Linux Driver
+   description: Kernel Memory Access Linux Driver (x86-64 only)
 
    how to build: 
      cd kmem
@@ -20,8 +19,7 @@ Copyright 2014-2025 Takeshi Matsuya
 
 
  <pmem>
-   description:
-     Physical Memory Access Linux Driver
+   description: Physical Memory Access Linux Driver (x86-64 only)
 
    how to build: 
      cd pmem
@@ -34,8 +32,7 @@ Copyright 2014-2025 Takeshi Matsuya
 
 
  <memory>
-   description:
-     Memory Editor
+   description: Memory Editor
 
    how to build: 
      cd memory
