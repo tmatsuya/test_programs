@@ -3,7 +3,7 @@ Copyright 2014-2025 Takeshi Matsuya
 
 [Memory Tools]
 
-*CAUTION: These tools can cause your system to fail if used incorrectly.
+*CAUTION: These tools can cause fatal damage to your system if used incorrectly.
 
  <kmem>
    description: Kernel Memory Access Linux Driver (x86-64 only)
