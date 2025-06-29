@@ -1,0 +1,1 @@
+savedcmd_/home/tmatsuya/test_programs/pmem/pmem.ko := ld -r -m elf_x86_64 -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T scripts/module.lds -o /home/tmatsuya/test_programs/pmem/pmem.ko /home/tmatsuya/test_programs/pmem/pmem.o /home/tmatsuya/test_programs/pmem/pmem.mod.o

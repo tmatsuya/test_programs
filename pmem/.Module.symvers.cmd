@@ -1,0 +1,1 @@
+savedcmd_/home/tmatsuya/test_programs/pmem/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/tmatsuya/test_programs/pmem/Module.symvers -T /home/tmatsuya/test_programs/pmem/modules.order -i Module.symvers -e 

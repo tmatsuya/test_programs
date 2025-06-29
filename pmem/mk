@@ -1,0 +1,6 @@
+sudo rmmod kmem
+make clean
+make
+sudo make install
+sudo make autoload
+sudo modprobe kmem
