@@ -92,10 +92,12 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 	else
 		copy_len = left_len;
 
-	if (addr >= 0xffffffffc0000000LL)
-		phy_addr = vaddr2paddr( addr, current );
-	else
+	if (addr < 0xffffffff80000000LL)
+		phy_addr = vaddr2paddr_l5( addr );
+	else if (addr < 0xffffffffc0000000LL)
 		phy_addr = virt_to_phys( addr );
+	else
+		phy_addr = vaddr2paddr_l5( addr );
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
@@ -134,10 +136,12 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 	else
 		copy_len = left_len;
 
-	if (addr >= 0xffffffffc0000000LL)
-		phy_addr = vaddr2paddr( addr, current );
-	else
+	if (addr < 0xffffffff80000000LL)
+		phy_addr = vaddr2paddr_l5( addr );
+	else if (addr < 0xffffffffc0000000LL)
 		phy_addr = virt_to_phys( addr );
+	else
+		phy_addr = vaddr2paddr_l5( addr );
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
