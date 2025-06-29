@@ -24,8 +24,8 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.1.1"
-#define	pmem_DRIVER_NAME	DRV_NAME " pmem driver " DRV_VERSION
+#define	DRV_VERSION	"0.2.0"
+#define	pmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
 #define	__devinit
@@ -202,6 +202,8 @@ static struct miscdevice pmem_dev = {
 static int __init pmem_init(void)
 {
 	int ret;
+
+	printk( KERN_INFO "Physical MEMory access driver: Copyright (c) 2014-2025 Takeshi Matsuya\n" );
 
 #ifdef MODULE
 	pr_info(pmem_DRIVER_NAME "\n");

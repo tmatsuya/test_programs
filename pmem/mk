@@ -1,6 +1,6 @@
-sudo rmmod kmem
+sudo rmmod pmem
 make clean
 make
 sudo make install
 sudo make autoload
-sudo modprobe kmem
+sudo modprobe pmem

@@ -24,8 +24,8 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.1.2"
-#define	kmem_DRIVER_NAME	DRV_NAME " kmem driver " DRV_VERSION
+#define	DRV_VERSION	"0.2.0"
+#define	kmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
 #define	__devinit
@@ -203,6 +203,8 @@ static struct miscdevice kmem_dev = {
 static int __init kmem_init(void)
 {
 	int ret;
+
+	printk( KERN_INFO "Kernel MEMory access driver: Copyright (c) 2014-2025 Takeshi Matsuya\n" );
 
 #ifdef MODULE
 	pr_info(kmem_DRIVER_NAME "\n");

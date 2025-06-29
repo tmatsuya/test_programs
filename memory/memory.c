@@ -69,11 +69,12 @@ int main(int argc, char *argv[])
 		strcpy(device_file, argv[1]);
 		input_addr = strtoull(argv[2], NULL, 0);
 	} else {
+		printf("Memory Editor: Copyright 2014-2025 Takeshi Matsuya\n\n" );
 		printf("usage:\t%s [file] memory_address\n", argv[0]);
 		printf("\tmemory 0xb80000\n");
 		printf("\tmemory /dev/pmem 0xb80000\n");
 		printf("\tmemory /dev/kmem 0xb80000\n");
-		printf("file: default %s\n", MEM_DEVICE);
+		printf("file: default %s\n\n", MEM_DEVICE);
 		exit(0);
 	}
 
