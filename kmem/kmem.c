@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.1.1"
+#define	DRV_VERSION	"0.1.2"
 #define	kmem_DRIVER_NAME	DRV_NAME " kmem driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -76,13 +76,14 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 			   size_t count, loff_t *ppos)
 {
 	unsigned long copy_len, left_len;
+	unsigned long long addr;
 	pte_t *pte = 0;
 	unsigned long pte_save;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
-printk("%s\n", __func__);
 
+	addr = (filp->f_pos & 0xf000000000000LL) ? (filp->f_pos | 0xffff000000000000LL) : filp->f_pos;
 	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
@@ -92,9 +93,10 @@ printk("%s\n", __func__);
 //		pte_save = pte->pte;
 //		pte->pte = (filp->f_pos & ~0xfffLL) | (pte_save & 0xfff);
 //	}
-printk( "read:%llX\n", (unsigned char *)filp->f_pos );
 
-	if ( copy_to_user( buf, (unsigned char *)filp->f_pos, copy_len ) ) {
+	memcpy( paged_buf, addr, copy_len );
+	//if ( copy_to_user( buf, (unsigned char *)addr, copy_len ) ) {
+	if ( copy_to_user( buf, (unsigned char *)paged_buf, copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
 	}
@@ -111,12 +113,14 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 
 {
 	unsigned long copy_len, left_len;
+	unsigned long long addr;
 	pte_t *pte = 0;
 	unsigned long pte_save;
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
 
+	addr = (filp->f_pos & 0xf000000000000LL) ? (filp->f_pos | 0xffff000000000000LL) : filp->f_pos;
 	left_len = 0x1000 - (filp->f_pos & 0xfff);
 	if (count <= left_len)
 		copy_len = count;
@@ -124,13 +128,14 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 		copy_len = left_len;
 
 
-	if ( (pte = get_pte((unsigned long long)filp->f_pos)) ) {
+	if ( (pte = get_pte((unsigned long long)addr)) ) {
 		pte_save = pte->pte;
 		pte->pte = (filp->f_pos & ~0xfff) | (pte_save & 0xfff);
 		pte->pte |= (_PAGE_RW);
 	}
 
-	if ( copy_from_user( (unsigned char *)filp->f_pos, buf, copy_len ) ) {
+	memcpy( paged_buf, buf, copy_len );
+	if ( copy_from_user( (unsigned char *)addr, paged_buf, copy_len ) ) {
 		printk( KERN_INFO "copy_from_user failed\n" );
 		return -EFAULT;
 	}
@@ -162,12 +167,15 @@ static long kmem_ioctl(struct file *filp,
 
 static loff_t kmem_llseek(struct file *flip, loff_t offset, int whence)
 {
+printk("%s\n", __func__);
 	if (whence == SEEK_SET)
 		flip->f_pos = offset;
 	else if (whence == SEEK_CUR)
 		flip->f_pos += offset;
 	else if (whence == SEEK_END)
 		flip->f_pos = ~0LL + offset;
+
+	flip->f_pos &= 0x0fffffffffffffffLL;
 
 	return flip->f_pos;
 }
