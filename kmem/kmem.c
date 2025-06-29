@@ -128,17 +128,19 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 		copy_len = left_len;
 
 
-	if ( (pte = get_pte((unsigned long long)addr)) ) {
-		pte_save = pte->pte;
-		pte->pte = (filp->f_pos & ~0xfff) | (pte_save & 0xfff);
-		pte->pte |= (_PAGE_RW);
-	}
-
-	memcpy( paged_buf, buf, copy_len );
-	if ( copy_from_user( (unsigned char *)addr, paged_buf, copy_len ) ) {
+	if ( copy_from_user( (unsigned char *)paged_buf, buf, copy_len ) ) {
 		printk( KERN_INFO "copy_from_user failed\n" );
 		return -EFAULT;
 	}
+
+	if ( (pte = get_pte((unsigned long long)addr)) ) {
+		pte_save = pte->pte;
+		pte->pte = (pte->pte & ~0xfff) | (pte_save & 0xfff);
+		pte->pte |= (_PAGE_RW);
+	}
+
+	// 実際にカーネル領域に書き込みを行う(ここは危険)
+	memcpy( (unsigned char *)addr, paged_buf, copy_len );
 
 	if (pte) {
 		pte->pte = pte_save;
@@ -167,7 +169,6 @@ static long kmem_ioctl(struct file *filp,
 
 static loff_t kmem_llseek(struct file *flip, loff_t offset, int whence)
 {
-printk("%s\n", __func__);
 	if (whence == SEEK_SET)
 		flip->f_pos = offset;
 	else if (whence == SEEK_CUR)
