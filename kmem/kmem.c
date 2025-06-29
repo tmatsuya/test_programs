@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.2.0"
+#define	DRV_VERSION	"0.2.1"
 #define	kmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -76,7 +76,7 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 			   size_t count, loff_t *ppos)
 {
 	unsigned long copy_len, left_len;
-	unsigned long long addr;
+	unsigned long long addr, phy_addr;
 	pte_t *pte = 0;
 	unsigned long pte_save;
 #ifdef DEBUG
@@ -89,21 +89,22 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 		copy_len = count;
 	else
 		copy_len = left_len;
-//	if ( (pte = get_pte((unsigned long long)filp->f_pos)) ) {
-//		pte_save = pte->pte;
-//		pte->pte = (filp->f_pos & ~0xfffLL) | (pte_save & 0xfff);
-//	}
 
-	memcpy( paged_buf, addr, copy_len );
-	//if ( copy_to_user( buf, (unsigned char *)addr, copy_len ) ) {
-	if ( copy_to_user( buf, (unsigned char *)paged_buf, copy_len ) ) {
+	phy_addr = virt_to_phys( addr );
+
+	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
+		pte_save = pte->pte;
+		pte->pte = (phy_addr & ~0xfffLL) | (pte_save & 0xfff);
+	}
+
+	if ( copy_to_user( buf, (unsigned char *)paged_buf+(filp->f_pos & 0xfff), copy_len ) ) {
 		printk( KERN_INFO "copy_to_user failed\n" );
 		return -EFAULT;
 	}
 
-//	if (pte) {
-//		pte->pte = pte_save;
-//	}
+	if (pte) {
+		pte->pte = pte_save;
+	}
 
 	return copy_len;
 }
