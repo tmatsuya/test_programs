@@ -15,7 +15,7 @@ Copyright 2014-2025 Takeshi Matsuya
 
    how to use
      sudo lv /proc/kallsyms 
-     memory /dev/kmem 0x???????
+     sudo memory /dev/kmem 0x???????
 
 
  <pmem>
@@ -28,7 +28,7 @@ Copyright 2014-2025 Takeshi Matsuya
 
    how to use
      lspci -v
-     memory /dev/pmem 0xfc800000    # (Display and modify PCI BAR register)
+     sudo memory /dev/pmem 0xfc800000    # (Display and modify PCI BAR register)
 
 
  <memory>
