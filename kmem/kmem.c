@@ -113,9 +113,10 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 
 {
 	unsigned long copy_len, left_len;
-	unsigned long long addr;
+	unsigned long long addr, phy_addr;
 	pte_t *pte = 0;
 	unsigned long pte_save;
+	unsigned char tbuf[4096];
 #ifdef DEBUG
 	printk("%s\n", __func__);
 #endif
@@ -127,20 +128,20 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 	else
 		copy_len = left_len;
 
+	phy_addr = virt_to_phys( addr );
 
-	if ( copy_from_user( (unsigned char *)paged_buf, buf, copy_len ) ) {
-		printk( KERN_INFO "copy_from_user failed\n" );
-		return -EFAULT;
-	}
-
-	if ( (pte = get_pte((unsigned long long)addr)) ) {
+	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
-		pte->pte = (pte->pte & ~0xfff) | (pte_save & 0xfff);
+		pte->pte = (phy_addr & ~0xfff) | (pte_save & 0xfff);
 		pte->pte |= (_PAGE_RW);
 	}
 
+	if ( copy_from_user( tbuf, buf, copy_len ) ) {
+		printk( KERN_INFO "copy_from_user failed\n" );
+		return -EFAULT;
+	}
 	// 実際にカーネル領域に書き込みを行う(ここは危険)
-	memcpy( (unsigned char *)addr, paged_buf, copy_len );
+	memcpy( paged_buf+(filp->f_pos & 0xfff), tbuf, copy_len );
 
 	if (pte) {
 		pte->pte = pte_save;
