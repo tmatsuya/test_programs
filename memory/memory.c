@@ -21,12 +21,14 @@
 WINDOW *win;
 int mem_fd;
 unsigned long long top_addr, input_addr;
+char device_file[256];
 
 int display_memory(unsigned long long addr)
 {
 	int i, y, x;
 	unsigned char c;
-	mvwaddstr(win, 1, 2, "Address");
+	mvwaddstr(win, 1,  2, "Address");
+	mvwaddstr(win, 1, 67, device_file);
 	mvwaddstr(win, LINES-2, 1, "Exit:[Ctrl+X] PageDown:[Ctrl+F] PageUp:[Ctrl+B] Redraw On/Off:[Ctrl+L] Redraw:[ESC]");
 	for (i=0; i<16; ++i) {
 		mvwprintw(win, 1, i*3+18, "+%X", i);
@@ -59,7 +61,6 @@ int main(int argc, char *argv[])
 	int y, x, n;
 	int autoredraw = 1;
 	int idata;
-	char device_file[256];
 
 	strcpy(device_file, MEM_DEVICE);
 
