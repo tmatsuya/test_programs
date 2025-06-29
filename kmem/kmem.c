@@ -15,6 +15,7 @@
 #include <linux/init.h>
 
 #include "get_pte.c"
+#include "vaddr2paddr.c"
 
 //#define	DEBUG
 
@@ -24,7 +25,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.2.1"
+#define	DRV_VERSION	"0.2.2"
 #define	kmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -91,7 +92,10 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 	else
 		copy_len = left_len;
 
-	phy_addr = virt_to_phys( addr );
+	if (addr >= 0xffffffffc0000000LL)
+		phy_addr = vaddr2paddr( addr, current );
+	else
+		phy_addr = virt_to_phys( addr );
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
@@ -130,7 +134,10 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 	else
 		copy_len = left_len;
 
-	phy_addr = virt_to_phys( addr );
+	if (addr >= 0xffffffffc0000000LL)
+		phy_addr = vaddr2paddr( addr, current );
+	else
+		phy_addr = virt_to_phys( addr );
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
