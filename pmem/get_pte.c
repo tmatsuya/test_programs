@@ -16,6 +16,26 @@
 
 #include <asm/pgtable_types.h>
 
+
+#ifdef __x86_64__
+void get_cr34( u64 *cpu_cr3, u64 *cpu_cr4 )
+{
+	u64 cr3, cr4;
+	__asm__ __volatile__ (
+		"mov %%cr3, %%rax\n\t"
+		"mov %%eax, %0\n\t"
+		"mov %%cr4, %%rax\n\t"
+		"mov %%eax, %1\n\t"
+	: "=m" (cr3), "=m" (cr4)
+	: /* no input */
+	: "%rax"
+	);
+	*cpu_cr3 = cr3;
+	*cpu_cr4 = cr4;
+}
+#endif
+
+
 pte_t *get_pte(unsigned long long vaddr)
 {
 	pgd_t *pgd = pgd_offset(current->mm, vaddr);

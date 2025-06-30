@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.2.0"
+#define	DRV_VERSION	"0.2.1"
 #define	pmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -33,8 +33,8 @@
 #define	__devexit_p
 #endif
 
-//static unsigned long long pmem_position = 0LL;
 unsigned char paged_buf[4096]__attribute__((aligned(4096)));
+int paging_level;
 
 static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)
 {
@@ -67,7 +67,6 @@ static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)
 static int pmem_open(struct inode *inode, struct file *filp)
 {
 	printk("%s\n", __func__);
-//	pmem_position = 0LL;
 
 	return 0;
 }
@@ -100,8 +99,6 @@ static ssize_t pmem_read(struct file *filp, char __user *buf,
 	if (pte) {
 		pte->pte = pte_save;
 	}
-
-//	pmem_position += copy_len;
 
 	return copy_len;
 }
@@ -138,8 +135,6 @@ static ssize_t pmem_write(struct file *filp, const char __user *buf,
 	if (pte) {
 		pte->pte = pte_save;
 	}
-
-//	pmem_position += copy_len;
 
 	return copy_len;
 }
@@ -202,8 +197,17 @@ static struct miscdevice pmem_dev = {
 static int __init pmem_init(void)
 {
 	int ret;
+	u64 cpu_cr3, cpu_cr4;
 
-	printk( KERN_INFO "Physical MEMory access driver: Copyright (c) 2014-2025 Takeshi Matsuya\n" );
+	printk( KERN_INFO "Physical MEMory access driver %s: Copyright (c) 2014-2025 Takeshi Matsuya\n", DRV_VERSION );
+	get_cr34( &cpu_cr3, &cpu_cr4 );
+	if ( cpu_cr4 & X86_CR4_LA57)
+		paging_level = 5;
+	else
+		paging_level = 4;
+
+	printk( KERN_INFO "CR3=%x CR4=%x (MMU %d Level paging)\n", cpu_cr3, cpu_cr4, paging_level);
+
 
 #ifdef MODULE
 	pr_info(pmem_DRIVER_NAME "\n");
