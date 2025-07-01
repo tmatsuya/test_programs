@@ -14,8 +14,12 @@
 #include <linux/uaccess.h>
 #include <linux/init.h>
 
+#ifdef __x86_64__
 #include <asm/pgtable_types.h>
+#endif
 
+#ifdef __aarch64__
+#endif
 
 #ifdef __x86_64__
 void get_cr34( u64 *cpu_cr3, u64 *cpu_cr4 )

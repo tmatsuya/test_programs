@@ -38,6 +38,14 @@ int paging_level;
 
 
 #ifdef __aarch64__
+int get_paging_level()
+{
+	return ( 4 );
+}
+
+pte_t *get_pte(unsigned long vaddr)
+{
+}
 #endif
 
 
@@ -48,6 +56,22 @@ pte_t *get_pte(unsigned long vaddr)
 		return get_pte4( vaddr );
 	else
 		return get_pte5( vaddr );
+}
+
+int get_paging_level( void )
+{
+	u64 cpu_cr3, cpu_cr4;
+	int rc;
+
+	get_cr34( &cpu_cr3, &cpu_cr4 );
+	if ( cpu_cr4 & X86_CR4_LA57)
+		rc = 5;
+	else
+		rc = 4;
+
+	printk( KERN_INFO "CR3=%x CR4=%x (MMU %d Level paging)\n", cpu_cr3, cpu_cr4, rc );
+
+	return ( rc );
 }
 #endif
 
@@ -213,16 +237,9 @@ static struct miscdevice pmem_dev = {
 static int __init pmem_init(void)
 {
 	int ret;
-	u64 cpu_cr3, cpu_cr4;
 
 	printk( KERN_INFO "Physical MEMory access driver %s: Copyright (c) 2014-2025 Takeshi Matsuya\n", DRV_VERSION );
-	get_cr34( &cpu_cr3, &cpu_cr4 );
-	if ( cpu_cr4 & X86_CR4_LA57)
-		paging_level = 5;
-	else
-		paging_level = 4;
-
-	printk( KERN_INFO "CR3=%x CR4=%x (MMU %d Level paging)\n", cpu_cr3, cpu_cr4, paging_level);
+	paging_level = get_paging_level();
 
 
 #ifdef MODULE
