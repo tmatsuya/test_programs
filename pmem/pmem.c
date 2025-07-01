@@ -24,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.2.1"
+#define	DRV_VERSION	"0.3.0"
 #define	pmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -35,6 +35,16 @@
 
 unsigned char paged_buf[4096]__attribute__((aligned(4096)));
 int paging_level;
+
+
+pte_t *get_pte(unsigned long vaddr)
+{
+	if (paging_level==4)
+		return get_pte4( vaddr );
+	else
+		return get_pte5( vaddr );
+}
+
 
 static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)
 {

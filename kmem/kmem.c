@@ -15,7 +15,6 @@
 #include <linux/init.h>
 
 #include "get_pte.c"
-#include "vaddr2paddr.c"
 
 //#define	DEBUG
 
@@ -25,7 +24,7 @@
 #ifndef	DRV_IDX
 #define	DRV_IDX		(0)
 #endif
-#define	DRV_VERSION	"0.2.3"
+#define	DRV_VERSION	"0.3.0"
 #define	kmem_DRIVER_NAME	DRV_NAME " driver " DRV_VERSION
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,8,0)
@@ -36,6 +35,16 @@
 
 unsigned char paged_buf[4096]__attribute__((aligned(4096)));
 int paging_level;
+
+
+pte_t *get_pte(unsigned long vaddr)
+{
+	if (paging_level==4)
+		return get_pte4( vaddr );
+	else
+		return get_pte5( vaddr );
+}
+
 
 static int kmem_mmap(struct file *filp, struct vm_area_struct *vma)
 {
@@ -92,11 +101,11 @@ static ssize_t kmem_read(struct file *filp, char __user *buf,
 		copy_len = left_len;
 
 	if (addr < 0xffffffff80000000LL)
-		phy_addr = vaddr2paddr_l5( addr );
+		phy_addr = pte_val(*get_pte( addr )) & PAGE_MASK;
 	else if (addr < 0xffffffffc0000000LL)
 		phy_addr = virt_to_phys( addr );
 	else
-		phy_addr = vaddr2paddr_l5( addr );
+		phy_addr = pte_val(*get_pte( addr )) & PAGE_MASK;
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
@@ -136,11 +145,11 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 		copy_len = left_len;
 
 	if (addr < 0xffffffff80000000LL)
-		phy_addr = vaddr2paddr_l5( addr );
+		phy_addr = pte_val(*get_pte( addr )) & PAGE_MASK;
 	else if (addr < 0xffffffffc0000000LL)
 		phy_addr = virt_to_phys( addr );
 	else
-		phy_addr = vaddr2paddr_l5( addr );
+		phy_addr = pte_val(*get_pte( addr )) & PAGE_MASK;
 
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
