@@ -37,6 +37,11 @@ unsigned char paged_buf[4096]__attribute__((aligned(4096)));
 int paging_level;
 
 
+#ifdef __aarch64__
+#endif
+
+
+#ifdef __x86_64__
 pte_t *get_pte(unsigned long vaddr)
 {
 	if (paging_level==4)
@@ -44,6 +49,7 @@ pte_t *get_pte(unsigned long vaddr)
 	else
 		return get_pte5( vaddr );
 }
+#endif
 
 
 static int pmem_mmap(struct file *filp, struct vm_area_struct *vma)

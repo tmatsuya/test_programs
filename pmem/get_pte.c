@@ -16,6 +16,13 @@
 
 #include <asm/pgtable_types.h>
 
+#ifdef __aarch64__
+void get_cr34( u64 *cpu_cr3, u64 *cpu_cr4 )
+{
+}
+
+
+#endif
 
 #ifdef __x86_64__
 void get_cr34( u64 *cpu_cr3, u64 *cpu_cr4 )
