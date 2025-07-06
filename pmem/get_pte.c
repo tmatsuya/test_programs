@@ -19,6 +19,42 @@
 #endif
 
 #ifdef __aarch64__
+pte_t *get_pte4(unsigned long vaddr)
+{
+	pgd_t *pgd;
+	pud_t *pud;
+	pmd_t *pmd;
+	pte_t *pte;
+
+	pgd = pgd_offset(current->mm, vaddr);
+	printk(KERN_INFO "pgd is: %p\n", (void *)pgd);
+	printk(KERN_INFO "pgd value: %llx\n", *pgd);
+	if (pgd_none(*pgd) || pgd_bad(*pgd)) 
+		return (pte_t *)NULL;
+	//check if (*pgd) is a table entry. Exit here if you get the table entry.
+
+	pud = pud_offset((p4d_t *)pgd, vaddr);
+	printk(KERN_INFO "pud is: %p\n", (void *)pud);
+	printk(KERN_INFO "pud value: %llx\n", *pud);
+	if (pud_none(*pud) || pud_bad(*pud))
+		return (pte_t *)NULL;
+	//check if (*pud) is a table entry. Exit here if you get the table entry.   
+
+	pmd = pmd_offset(pud, vaddr);
+	printk(KERN_INFO "pmd is: %p\n", (void *)pmd);
+	printk(KERN_INFO "pmd value: %llx\n",*pmd);
+	if (pmd_none(*pmd) || pmd_bad(*pmd))
+		return (pte_t *)NULL;
+	//check if (*pmd) is a table entry. Exit here if you get the table entry.
+
+	pte = pte_offset_kernel(pmd, vaddr);
+	printk(KERN_INFO "pte is: %p\n", (void *)pte);
+	printk(KERN_INFO "pte value: %llx\n",*pte);
+	if (!pte)
+		return (pte_t *)NULL;
+
+	return (pte_t *)pte;
+}
 #endif
 
 #ifdef __x86_64__
@@ -37,8 +73,10 @@ void get_cr34( u64 *cpu_cr3, u64 *cpu_cr4 )
 	*cpu_cr3 = cr3;
 	*cpu_cr4 = cr4;
 }
+#endif
 
 
+#ifdef __x86_64__
 pte_t *get_pte4(unsigned long vaddr)
 {
 	pgd_t *pgd;

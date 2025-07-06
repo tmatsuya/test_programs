@@ -40,12 +40,17 @@ int paging_level;
 #ifdef __aarch64__
 int get_paging_level( void )
 {
-	return ( 4 );
+	int rc;
+
+	rc = 4;
+	printk( KERN_INFO "MMU %d Level paging\n", rc );
+
+	return ( rc );
 }
 
 pte_t *get_pte(unsigned long vaddr)
 {
-	return (pte_t *)NULL;
+	return get_pte4( vaddr );
 }
 #endif
 
