@@ -38,13 +38,14 @@ int paging_level;
 
 
 #ifdef __aarch64__
-int get_paging_level()
+int get_paging_level( void )
 {
 	return ( 4 );
 }
 
 pte_t *get_pte(unsigned long vaddr)
 {
+	return (pte_t *)NULL;
 }
 #endif
 
@@ -184,7 +185,12 @@ static ssize_t kmem_write(struct file *filp, const char __user *buf,
 	if ( (pte = get_pte((unsigned long long)paged_buf)) ) {
 		pte_save = pte->pte;
 		pte->pte = (phy_addr & ~0xfff) | (pte_save & 0xfff);
+#ifdef __aarch64__
+		pte->pte |= (PTE_RDONLY | PTE_USER);
+#endif
+#ifdef __x86_64__
 		pte->pte |= (_PAGE_RW);
+#endif
 	}
 
 	if ( copy_from_user( tbuf, buf, copy_len ) ) {
